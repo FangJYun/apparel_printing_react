@@ -8,21 +8,27 @@ const slides = [
     title: "客户图库自动归档",
     body: "上传、爬取、来源信息、缩略图和 AI 原始识别结果统一进入文件底座。",
     metric: "842",
-    label: "今日素材入库"
+    label: "今日素材入库",
+    visual: "archive",
+    chips: ["JPG", "PNG", "PSD", "TIFF", "RAW", "WEBP"]
   },
   {
     eyebrow: "标签即结构",
     title: "印花标签树自动归类",
     body: "格式、风格、图案内容、工艺名称和色系沉淀成可筛选的业务字典。",
     metric: "229",
-    label: "印花标签"
+    label: "印花标签",
+    visual: "tags",
+    chips: ["花卉", "几何", "动物纹", "文字", "工艺", "色系"]
   },
   {
     eyebrow: "产品即交付",
     title: "成品链路持续追踪",
     body: "服装、T 恤、裤子和印花统一为产品对象，保留父子来源关系。",
     metric: "8",
-    label: "AI 流程节点"
+    label: "AI 流程节点",
+    visual: "product",
+    chips: ["素材", "识别", "生图", "打板", "成品", "交付"]
   }
 ];
 
@@ -40,15 +46,37 @@ export function HomeCarousel() {
   const slide = slides[active];
 
   return (
-    <section className="carousel" aria-label="平台能力轮播">
-      <div className="carouselCopy">
-        <p className="eyebrow">{slide.eyebrow}</p>
-        <h2>{slide.title}</h2>
-        <p>{slide.body}</p>
+    <section className="carousel" aria-label="平台能力自动轮播">
+      <div className="carouselStage" aria-hidden="true">
+        {slides.map((item, index) => (
+          <div className={`carouselVisual ${item.visual} ${active === index ? "active" : ""}`} key={item.title}>
+            <div className="visualHeader">
+              <span />
+              <span />
+              <span />
+              <small>{item.visual}.preview</small>
+            </div>
+            <div className="visualGrid">
+              {item.chips.map((chip) => (
+                <span key={chip}>{chip}</span>
+              ))}
+            </div>
+            <div className="visualScanner">
+              <span />
+            </div>
+          </div>
+        ))}
       </div>
-      <div className="carouselMetric">
-        <strong>{slide.metric}</strong>
-        <span>{slide.label}</span>
+      <div className="carouselContent">
+        <div className="carouselCopy">
+          <p className="eyebrow">{slide.eyebrow}</p>
+          <h2 key={slide.title}>{slide.title}</h2>
+          <p key={slide.body}>{slide.body}</p>
+        </div>
+        <div className="carouselMetric">
+          <strong key={slide.metric}>{slide.metric}</strong>
+          <span>{slide.label}</span>
+        </div>
       </div>
       <div className="carouselDots" role="tablist" aria-label="轮播切换">
         {slides.map((item, index) => (
@@ -59,7 +87,9 @@ export function HomeCarousel() {
             key={item.title}
             onClick={() => setActive(index)}
             type="button"
-          />
+          >
+            <span />
+          </button>
         ))}
       </div>
     </section>

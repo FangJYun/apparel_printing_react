@@ -176,12 +176,47 @@ main {
   font-weight: 700;
 }
 
-.hero {
+.heroCarousel {
+  position: relative;
+  height: clamp(560px, calc(100vh - 92px), 680px);
+  margin: 18px -32px 26px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--color-onyx);
+  background: var(--color-obsidian);
+}
+
+.heroImages {
+  position: absolute;
+  inset: 0;
+}
+
+.heroImages img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.025);
+  transition:
+    opacity 760ms ease,
+    transform 5200ms ease;
+}
+
+.heroImages img.active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.heroOverlay {
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 520px;
-  gap: 60px;
+  grid-template-columns: minmax(0, 1fr) 500px;
+  gap: 56px;
   align-items: center;
-  padding: 72px 8px 44px;
+  height: 100%;
+  padding: 72px 40px 76px;
 }
 
 .eyebrow {
@@ -193,7 +228,7 @@ main {
   text-transform: uppercase;
 }
 
-.hero h1 {
+.heroCopy h1 {
   max-width: 720px;
   margin: 0;
   color: var(--color-bone);
@@ -203,7 +238,7 @@ main {
   line-height: 0.98;
 }
 
-.hero h1 span {
+.heroCopy h1 span {
   display: block;
   color: var(--color-phosphor-violet);
 }
@@ -220,6 +255,50 @@ main {
   display: flex;
   gap: 12px;
   margin-top: 32px;
+}
+
+.heroDots {
+  position: absolute;
+  z-index: 2;
+  bottom: 32px;
+  left: 40px;
+  display: flex;
+  gap: 10px;
+}
+
+.heroDots button {
+  width: 56px;
+  height: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 50px;
+  background: rgba(250, 249, 246, 0.18);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.heroDots button span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-phosphor-violet);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.heroDots button.active span {
+  animation: heroDotProgress 5200ms linear forwards;
+}
+
+@keyframes heroDotProgress {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
 }
 
 .primaryButton,
@@ -313,10 +392,10 @@ main {
 .carousel {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 240px;
+  grid-template-columns: minmax(280px, 0.95fr) minmax(0, 1.05fr);
   gap: 24px;
   align-items: center;
-  min-height: 260px;
+  min-height: 320px;
   margin-bottom: 18px;
   padding: 30px;
   overflow: hidden;
@@ -337,6 +416,138 @@ main {
 .carouselMetric,
 .carouselDots {
   position: relative;
+}
+
+.carouselStage {
+  position: relative;
+  min-height: 248px;
+  border: 1px solid var(--color-carbon);
+  border-radius: 18px;
+  background: var(--color-obsidian);
+  overflow: hidden;
+}
+
+.carouselVisual {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 18px;
+  padding: 18px;
+  opacity: 0;
+  transform: translateX(18px) scale(0.985);
+  transition:
+    opacity 520ms ease,
+    transform 520ms ease;
+}
+
+.carouselVisual.active {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+.visualHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-ash);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+}
+
+.visualHeader span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-carbon);
+}
+
+.visualHeader small {
+  margin-left: auto;
+  color: var(--color-iron);
+}
+
+.visualGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.visualGrid span {
+  position: relative;
+  display: grid;
+  min-height: 72px;
+  place-items: end start;
+  padding: 12px;
+  border: 1px solid var(--color-onyx);
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgba(250, 249, 246, 0.08), transparent 44%),
+    var(--color-graphite);
+  color: var(--color-ash-mid);
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.visualGrid span::before {
+  position: absolute;
+  inset: 10px 10px auto auto;
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(203, 176, 247, 0.45);
+  border-radius: 8px;
+  content: "";
+  opacity: 0.45;
+}
+
+.visualGrid span:nth-child(2n)::before {
+  opacity: 0.62;
+}
+
+.visualGrid span:nth-child(3n)::before {
+  opacity: 0.78;
+}
+
+.carouselVisual.tags .visualGrid span::before {
+  width: 42px;
+  height: 10px;
+  border-radius: 33px;
+}
+
+.carouselVisual.product .visualGrid span::before {
+  width: 20px;
+  height: 34px;
+  border-radius: 12px 12px 6px 6px;
+}
+
+.visualScanner {
+  height: 3px;
+  border-radius: 50px;
+  background: var(--color-carbon);
+  overflow: hidden;
+}
+
+.visualScanner span {
+  display: block;
+  width: 42%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-phosphor-violet);
+  animation: scannerMove 4200ms ease-in-out infinite;
+}
+
+.carouselContent {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  gap: 22px;
+  align-items: center;
+}
+
+.carouselCopy h2,
+.carouselCopy p:not(.eyebrow),
+.carouselMetric strong {
+  animation: carouselFadeUp 460ms ease both;
 }
 
 .carouselCopy h2 {
@@ -389,17 +600,61 @@ main {
 }
 
 .carouselDots button {
-  width: 30px;
+  width: 42px;
   height: 6px;
   padding: 0;
   border: 0;
   border-radius: 50px;
   background: var(--color-carbon);
   cursor: pointer;
+  overflow: hidden;
 }
 
-.carouselDots button.active {
+.carouselDots button span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
   background: var(--color-phosphor-violet);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.carouselDots button.active span {
+  animation: dotProgress 4200ms linear forwards;
+}
+
+@keyframes carouselFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scannerMove {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  55%,
+  100% {
+    transform: translateX(240%);
+  }
+}
+
+@keyframes dotProgress {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
 }
 
 .pipelineSection {
@@ -843,8 +1098,9 @@ main {
     justify-content: flex-start;
   }
 
-  .hero {
+  .heroOverlay {
     grid-template-columns: 1fr;
+    gap: 34px;
   }
 
   .operations {
@@ -854,6 +1110,10 @@ main {
   .carousel,
   .featureGrid {
     grid-template-columns: 1fr;
+  }
+
+  .carouselContent {
+    grid-template-columns: minmax(0, 1fr) 190px;
   }
 
   .noticePanel {
@@ -882,11 +1142,17 @@ main {
     font-size: 15px;
   }
 
-  .hero {
-    padding-top: 42px;
+  .heroCarousel {
+    height: 680px;
+    margin: 10px -18px 22px;
   }
 
-  .hero h1 {
+  .heroOverlay {
+    height: 100%;
+    padding: 52px 18px 82px;
+  }
+
+  .heroCopy h1 {
     letter-spacing: -1.8px;
   }
 
@@ -894,6 +1160,10 @@ main {
   .sectionHeading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .heroCarousel .metricPanel {
+    display: none;
   }
 
   .metricPanel,
@@ -905,9 +1175,26 @@ main {
     padding: 22px;
   }
 
+  .carouselStage {
+    min-height: 220px;
+  }
+
+  .carouselContent {
+    grid-template-columns: 1fr;
+  }
+
+  .carouselMetric {
+    min-height: 126px;
+  }
+
   .carouselDots {
     position: static;
     margin-top: 20px;
+  }
+
+  .heroDots {
+    left: 18px;
+    bottom: 28px;
   }
 
   .pipelineSection {

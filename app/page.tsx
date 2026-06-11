@@ -1,41 +1,14 @@
 import Link from "next/link";
+import { HeroCarousel } from "./components/HeroCarousel";
 import { HomeCarousel } from "./components/HomeCarousel";
 import { PipelineSection } from "./components/PipelineSection";
 import { SiteShell } from "./components/SiteShell";
-import { metrics, queue } from "./data";
+import { queue } from "./data";
 
 export default function Home() {
   return (
     <SiteShell>
-      <section className="hero">
-        <div className="heroCopy">
-          <p className="eyebrow">AI PRINT OPERATIONS</p>
-          <h1>
-            把客户素材库变成
-            <span>可打板、可展示、可发布</span>
-            的成品流水线
-          </h1>
-          <p className="lead">从素材上传到成品交付，全流程 AI 驱动，智能分析、快速打板、高效生成，让印花开发更快、更准、更省。</p>
-          <div className="heroActions">
-            <Link className="primaryButton" href="/ai-flow">
-              启动 AI 流程 <span aria-hidden="true">▶</span>
-            </Link>
-            <Link className="ghostButton" href="/materials">
-              查看素材库
-            </Link>
-          </div>
-        </div>
-        <aside className="metricPanel" aria-label="今日运营指标">
-          {metrics.map((metric) => (
-            <div className="metricCard" key={metric.label}>
-              <p>{metric.label}</p>
-              <strong>{metric.value}</strong>
-              <span className={metric.tone}>{metric.delta} 较昨日</span>
-            </div>
-          ))}
-        </aside>
-      </section>
-
+      <HeroCarousel />
       <HomeCarousel />
       <PipelineSection />
 
