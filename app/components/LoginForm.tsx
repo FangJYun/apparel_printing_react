@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { FormEvent } from "react";
 import { useState } from "react";
+import { withBasePath } from "../path";
 
 export function LoginForm() {
   const [account, setAccount] = useState("admin");
@@ -33,7 +34,7 @@ export function LoginForm() {
         <h1 id="login-title">登录后台管理</h1>
         <p>进入项目生产驾驶舱，查看素材、AI 分析、打板和交付进度。</p>
 
-        <form action="/admin" onSubmit={handleSubmit}>
+        <form action={withBasePath("/admin")} onSubmit={handleSubmit}>
           <label>
             <span>账号</span>
             <input autoComplete="username" onChange={(event) => setAccount(event.target.value)} value={account} />

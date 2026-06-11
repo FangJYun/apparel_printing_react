@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { metrics } from "../data";
+import { withBasePath } from "../path";
 
 const heroSlides = [
   {
@@ -71,7 +72,7 @@ export function HeroCarousel() {
             key={item.image}
             priority={index === 0}
             sizes="100vw"
-            src={item.image}
+            src={withBasePath(item.image)}
           />
         ))}
       </div>
