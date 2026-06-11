@@ -35,6 +35,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             <span className="badge">8</span>
             ⌁
           </button>
+          <Link className="loginButton" href="/login">
+            登录
+          </Link>
           <button className="avatar" aria-label="账户">
             企
           </button>

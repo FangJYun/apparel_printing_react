@@ -141,3 +141,33 @@ export const featurePages = {
     statLabel: "响应支持"
   }
 } as const;
+
+export const adminMenuItems = [
+  { label: "工作台", href: "/admin", icon: "⌂" },
+  { label: "素材库", href: "/admin/materials", icon: "▤" },
+  { label: "AI 分析", href: "/admin/ai-analysis", icon: "▥" },
+  { label: "趋势增强", href: "/admin/trend-boost", icon: "↗" },
+  { label: "AI 生图", href: "/admin/ai-image", icon: "✣" },
+  { label: "AI 打板", href: "/admin/ai-pattern", icon: "▱" },
+  { label: "成品图", href: "/admin/product-image", icon: "♜" },
+  { label: "AI 视频", href: "/admin/ai-video", icon: "▦" },
+  { label: "一键交付", href: "/admin/delivery", icon: "◈" },
+  { label: "订单归档", href: "/admin/orders", icon: "▭" }
+];
+
+export const adminPipeline = [
+  { title: "素材上传", status: "已完成", progress: 100, state: "done" },
+  { title: "AI 分析", status: "已完成", progress: 100, state: "done" },
+  { title: "趋势增强", status: "已完成", progress: 94, state: "done" },
+  { title: "AI 生图", status: "已完成", progress: 86, state: "done" },
+  { title: "AI 打板", status: "复核中", progress: 68, state: "active" },
+  { title: "成品图", status: "生成中", progress: 48, state: "active" },
+  { title: "AI 视频", status: "排队中", progress: 18, state: "active" }
+];
+
+export const adminStats = [
+  { label: "素材入库", value: "286", note: "已分类 241 张，待复核 18 张" },
+  { label: "趋势匹配", value: "94%", note: "26SS 新中式植物" },
+  { label: "图案方案", value: "16", note: "4 个系列，3 个待打板" },
+  { label: "交付包", value: "7/8", note: "等待最终复核" }
+];
