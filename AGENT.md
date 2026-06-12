@@ -45,7 +45,9 @@ npm run build
 ## 开发约定
 
 - 默认使用 Server Components；只有需要浏览器状态或事件时才添加 `"use client"`。
-- 不新增 UI 组件库、动画库或图标库，除非明确需要。
+- 后台管理页面优先使用 Ant Design 组件（如 Card、Tree、Input、Select、Upload、Progress、Tag、Checkbox、Button）。
+- 图标统一优先使用 `lucide-react`，不要再用零散字符图标临时替代。
+- 不新增动画库或其它 UI 组件库，除非明确需要。
 - 语义上导航使用 `<a>`，动作使用 `<button>`。
 - 所有新 UI 需要兼顾移动端，避免文本溢出和卡片重叠。
 - 动效必须尊重 `prefers-reduced-motion`。

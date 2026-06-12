@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import "antd/dist/reset.css";
 import "./globals.css";
 
 const inter = Inter({
@@ -24,7 +26,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body className={`${inter.variable} ${jetbrainsMono.variable}`}>{children}</body>
+      <body className={`${inter.variable} ${jetbrainsMono.variable}`}>
+        <AntdRegistry>{children}</AntdRegistry>
+      </body>
     </html>
   );
 }

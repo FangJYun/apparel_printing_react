@@ -1,5 +1,5 @@
-import { AdminPlaceholder } from "../../components/AdminPlaceholder";
+import { MaterialUploadPanel } from "../../components/MaterialUploadPanel";
 
-export default function AdminPlaceholderPage() {
-  return <AdminPlaceholder title="素材库" />;
+export default function AdminMaterialsPage() {
+  return <MaterialUploadPanel />;
 }
