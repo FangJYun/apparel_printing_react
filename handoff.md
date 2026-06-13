@@ -6,7 +6,7 @@
 
 - 项目目录：`/Users/fangjiayun/myproject/trend/apparel_printing_react`
 - GitHub 仓库：`git@github.com:FangJYun/apparel_printing_react.git`
-- 当前最新提交：`75d54f2 Support subpath deployment`
+- 当前最新提交：`20696ea Build material library integration`
 - 技术栈：
   - Next.js `15.5.19`
   - React `19.0.0`
@@ -90,6 +90,7 @@
   - `43d17b2 Add hero image carousel`
   - `bf242e5 Add login and admin dashboard`
   - `75d54f2 Support subpath deployment`
+  - `20696ea Build material library integration`
 
 ## 子路径部署适配
 
