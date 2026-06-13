@@ -1,4 +1,5 @@
 import { adminMenuItems } from "../data";
+import { AdminIcon } from "./AdminIcon";
 
 export function AdminPlaceholder({ title }: { title: string }) {
   const current = adminMenuItems.find((item) => item.label === title);
@@ -16,7 +17,9 @@ export function AdminPlaceholder({ title }: { title: string }) {
         </div>
       </header>
       <section className="adminPlaceholder">
-        <span>{current?.icon ?? "⌂"}</span>
+        <span>
+          <AdminIcon iconKey={current?.iconKey} size={40} />
+        </span>
         <h2>{title}</h2>
         <p>当前为菜单跳转占位页。</p>
       </section>

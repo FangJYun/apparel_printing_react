@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { Button, Segmented } from "antd";
+import { Bell, Download, Files, Lightbulb, PenTool, Search, Shirt, Sparkles, SlidersHorizontal, Video } from "lucide-react";
 import { adminPipeline, adminStats } from "../data";
 
 const suggestions = [
-  { icon: "▱", text: "建议压缩为 6 个专色，进入分色复核" },
-  { icon: "♜", text: "生成 裙装 Mockup，确认销售图" },
-  { icon: "▦", text: "使用「成衣展示短视频」生成运营素材" }
+  { icon: PenTool, text: "建议压缩为 6 个专色，进入分色复核" },
+  { icon: Shirt, text: "生成 裙装 Mockup，确认销售图" },
+  { icon: Video, text: "使用「成衣展示短视频」生成运营素材" }
 ];
 
 export function AdminDashboard() {
@@ -27,12 +29,12 @@ export function AdminDashboard() {
           </i>
         </div>
         <div className="adminActions">
-          <button aria-label="搜索">⌕</button>
-          <button aria-label="通知">♧</button>
-          <button className="outlineAction">✣ 生成方案</button>
-          <button className="solidAction">⇩ 一键交付</button>
-          <Link aria-label="返回门户" href="/">
-            ♙
+          <Button aria-label="搜索" icon={<Search size={18} />} />
+          <Button aria-label="通知" icon={<Bell size={18} />} />
+          <Button className="outlineAction" icon={<Sparkles size={18} />}>生成方案</Button>
+          <Button className="solidAction" icon={<Download size={18} />}>一键交付</Button>
+          <Link aria-label="返回门户" href="/" className="adminIconLink">
+            <Shirt aria-hidden="true" size={18} />
           </Link>
         </div>
       </header>
@@ -71,7 +73,10 @@ export function AdminDashboard() {
           </section>
 
           <section className="workbenchPanel">
-            <p>⌂ 工作台</p>
+            <p>
+              <Lightbulb aria-hidden="true" size={16} />
+              工作台
+            </p>
             <h2>当前项目的素材分析、生成方案、打板状态和交付进度</h2>
             <div className="workbenchColumns">
               <div>
@@ -118,13 +123,22 @@ export function AdminDashboard() {
         </section>
 
         <aside className="assistantPanel">
-          <p>✣ 上下文助手</p>
+          <p>
+            <Sparkles aria-hidden="true" size={16} />
+            上下文助手
+          </p>
           <h2>项目总览</h2>
           <span>查看项目进度、关键风险和下一步动作。</span>
           <div className="assistantTabs">
-            <button>建议</button>
-            <button>参数</button>
-            <button>文件</button>
+            <Segmented
+              block
+              defaultValue="建议"
+              options={[
+                { label: "建议", value: "建议", icon: <Lightbulb size={15} /> },
+                { label: "参数", value: "参数", icon: <SlidersHorizontal size={15} /> },
+                { label: "文件", value: "文件", icon: <Files size={15} /> }
+              ]}
+            />
           </div>
           <article className="systemJudgement">
             <small>系统判断</small>
@@ -132,7 +146,9 @@ export function AdminDashboard() {
           </article>
           {suggestions.map((item) => (
             <article className="suggestionCard" key={item.text}>
-              <span>{item.icon}</span>
+              <span>
+                <item.icon aria-hidden="true" size={20} />
+              </span>
               <strong>{item.text}</strong>
             </article>
           ))}

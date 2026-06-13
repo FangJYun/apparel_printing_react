@@ -1,21 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import type { FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { withBasePath } from "../path";
+import { Alert, Button, Form, Input } from "antd";
+
+type LoginValues = {
+  account: string;
+  password: string;
+};
 
 export function LoginForm() {
-  const [account, setAccount] = useState("admin");
-  const [password, setPassword] = useState("admin");
+  const router = useRouter();
   const [error, setError] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    if (account === "admin" && password === "admin") {
+  function handleSubmit(values: LoginValues) {
+    if (values.account === "admin" && values.password === "admin") {
+      router.push("/admin");
       return;
     }
 
-    event.preventDefault();
     setError("账号或密码错误");
   }
 
@@ -34,20 +38,23 @@ export function LoginForm() {
         <h1 id="login-title">登录后台管理</h1>
         <p>进入项目生产驾驶舱，查看素材、AI 分析、打板和交付进度。</p>
 
-        <form action={withBasePath("/admin")} onSubmit={handleSubmit}>
-          <label>
-            <span>账号</span>
-            <input autoComplete="username" onChange={(event) => setAccount(event.target.value)} value={account} />
-          </label>
-          <label>
-            <span>密码</span>
-            <input autoComplete="current-password" onChange={(event) => setPassword(event.target.value)} type="password" value={password} />
-          </label>
-          {error ? <strong className="loginError">{error}</strong> : null}
-          <button className="loginSubmit" type="submit">
+        <Form<LoginValues>
+          className="loginForm"
+          initialValues={{ account: "admin", password: "admin" }}
+          layout="vertical"
+          onFinish={handleSubmit}
+        >
+          <Form.Item label="账号" name="account">
+            <Input autoComplete="username" />
+          </Form.Item>
+          <Form.Item label="密码" name="password">
+            <Input.Password autoComplete="current-password" />
+          </Form.Item>
+          {error ? <Alert className="loginError" title={error} type="error" /> : null}
+          <Button block className="loginSubmit" htmlType="submit">
             登录
-          </button>
-        </form>
+          </Button>
+        </Form>
       </section>
     </main>
   );

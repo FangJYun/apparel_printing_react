@@ -143,16 +143,16 @@ export const featurePages = {
 } as const;
 
 export const adminMenuItems = [
-  { label: "工作台", href: "/admin", icon: "⌂" },
-  { label: "素材库", href: "/admin/materials", icon: "▤" },
-  { label: "AI 分析", href: "/admin/ai-analysis", icon: "▥" },
-  { label: "趋势增强", href: "/admin/trend-boost", icon: "↗" },
-  { label: "AI 生图", href: "/admin/ai-image", icon: "✣" },
-  { label: "AI 打板", href: "/admin/ai-pattern", icon: "▱" },
-  { label: "成品图", href: "/admin/product-image", icon: "♜" },
-  { label: "AI 视频", href: "/admin/ai-video", icon: "▦" },
-  { label: "一键交付", href: "/admin/delivery", icon: "◈" },
-  { label: "订单归档", href: "/admin/orders", icon: "▭" }
+  { label: "工作台", href: "/admin", iconKey: "dashboard" },
+  { label: "素材库", href: "/admin/materials", iconKey: "library" },
+  { label: "AI 分析", href: "/admin/ai-analysis", iconKey: "analysis" },
+  { label: "趋势增强", href: "/admin/trend-boost", iconKey: "trend" },
+  { label: "AI 生图", href: "/admin/ai-image", iconKey: "generate" },
+  { label: "AI 打板", href: "/admin/ai-pattern", iconKey: "pattern" },
+  { label: "成品图", href: "/admin/product-image", iconKey: "productImage" },
+  { label: "AI 视频", href: "/admin/ai-video", iconKey: "video" },
+  { label: "一键交付", href: "/admin/delivery", iconKey: "delivery" },
+  { label: "订单归档", href: "/admin/orders", iconKey: "archive" }
 ];
 
 export const adminPipeline = [

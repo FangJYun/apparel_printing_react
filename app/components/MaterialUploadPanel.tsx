@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DataNode } from "antd/es/tree";
 import type { RcFile } from "antd/es/upload";
-import { Alert, Badge, Button, Card, Checkbox, Empty, Input, Progress, Select, Space, Tag, Tree, Upload } from "antd";
+import { Alert, Badge, Button, Card, Checkbox, Empty, Input, Progress, Space, Tag, Tree, Upload } from "antd";
 import {
-  ChevronDown,
   Database,
   Folder,
   MoreVertical,
@@ -62,6 +61,7 @@ type ImageRawResult = {
   fileExt: string;
   status: number;
   aiResultJson: string | null;
+  createdAt?: string;
   tags: ImageTagResult[];
 };
 
@@ -95,7 +95,7 @@ type MaterialTask = {
   fileSize: number;
   previewUrl: string;
   rawId?: number;
-  status: "uploading" | "processing" | "done" | "failed";
+  status: "uploading" | "processing" | "done" | "failed" | "upload_failed";
   progress: number;
   message: string;
   result?: ImageRawResult;
@@ -142,7 +142,8 @@ function progressFromStatus(status: number) {
 function taskStatusLabel(status: MaterialTask["status"]) {
   if (status === "uploading") return "上传中";
   if (status === "processing") return "AI 识别中";
-  if (status === "done") return "入库中";
+  if (status === "done") return "已入库";
+  if (status === "upload_failed") return "上传失败";
   return "识别失败";
 }
 
@@ -156,6 +157,28 @@ function parseSummary(aiResultJson?: string | null) {
   }
 }
 
+function taskMessageFromRaw(result: ImageRawResult, status: MaterialTask["status"]) {
+  if (status === "done") return "AI 标签识别完成";
+  if (status === "failed") return parseSummary(result.aiResultJson) || "AI 识别失败";
+  return "AI 正在分析图片标签";
+}
+
+function taskFromRawResult(result: ImageRawResult, existingTask?: MaterialTask): MaterialTask {
+  const status = normalizeStatus(result.status);
+  return {
+    id: existingTask?.id || `raw-${result.rawId}`,
+    fileName: result.fileName || existingTask?.fileName || `素材 #${result.rawId}`,
+    fileSize: result.fileSize || existingTask?.fileSize || 0,
+    previewUrl: result.thumbnailUrl || result.fileUrl || existingTask?.previewUrl || "",
+    rawId: result.rawId,
+    status,
+    progress: progressFromStatus(result.status),
+    message: taskMessageFromRaw(result, status),
+    result,
+    createdAt: result.createdAt || existingTask?.createdAt || new Date().toISOString()
+  };
+}
+
 function flattenBizTypes(nodes: BizTypeTreeNode[]): BizTypeTreeNode[] {
   return nodes.flatMap((node) => [node, ...flattenBizTypes(node.children || [])]);
 }
@@ -166,10 +189,6 @@ function flattenTags(nodes: TagTreeNode[]): TagTreeNode[] {
 
 function findPrintBizType(nodes: BizTypeTreeNode[]) {
   return flattenBizTypes(nodes).find((node) => node.typeKey === "print") || flattenBizTypes(nodes)[0];
-}
-
-function findFirstLeafTag(nodes: TagTreeNode[]) {
-  return flattenTags(nodes).find((node) => node.isLeaf === 1);
 }
 
 function bizTreeData(nodes: BizTypeTreeNode[]): DataNode[] {
@@ -191,7 +210,8 @@ function tagTreeData(
   nodes: TagTreeNode[],
   query: string,
   selectedTagIds: Set<number>,
-  onToggle: (tag: TagTreeNode) => void
+  onToggle: (tag: TagTreeNode) => void,
+  matchedTagIds: Set<number>
 ): DataNode[] {
   const normalized = query.trim().toLowerCase();
   return nodes
@@ -208,7 +228,7 @@ function tagTreeData(
     .map((node) => ({
       key: String(node.id),
       title: (
-        <span className="antMaterialTreeTitle noCount">
+        <span className={`antMaterialTreeTitle noCount ${matchedTagIds.has(node.id) ? "matched" : ""}`}>
           <span>
             {node.isLeaf === 1 ? (
               <Checkbox
@@ -225,8 +245,42 @@ function tagTreeData(
           </span>
         </span>
       ),
-      children: tagTreeData(node.children || [], query, selectedTagIds, onToggle)
+      children: tagTreeData(node.children || [], query, selectedTagIds, onToggle, matchedTagIds)
     }));
+}
+
+function tagMatches(node: TagTreeNode, normalizedQuery: string) {
+  return (
+    node.tagName.toLowerCase().includes(normalizedQuery) ||
+    node.tagKey.toLowerCase().includes(normalizedQuery)
+  );
+}
+
+function collectSearchTagState(nodes: TagTreeNode[], query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+  const expandedKeys = new Set<string>();
+  const matchedTagIds = new Set<number>();
+
+  function visit(node: TagTreeNode, parentIds: string[]) {
+    const selfMatched = normalizedQuery ? tagMatches(node, normalizedQuery) : false;
+    let childMatched = false;
+
+    for (const child of node.children || []) {
+      if (visit(child, [...parentIds, String(node.id)])) childMatched = true;
+    }
+
+    if (selfMatched) {
+      matchedTagIds.add(node.id);
+      parentIds.forEach((id) => expandedKeys.add(id));
+      if ((node.children || []).length > 0) expandedKeys.add(String(node.id));
+    }
+    if (childMatched) expandedKeys.add(String(node.id));
+
+    return selfMatched || childMatched;
+  }
+
+  nodes.forEach((node) => visit(node, []));
+  return { expandedKeys: Array.from(expandedKeys), matchedTagIds };
 }
 
 export function MaterialUploadPanel() {
@@ -237,11 +291,13 @@ export function MaterialUploadPanel() {
   const [selectedBizTypeId, setSelectedBizTypeId] = useState<number | null>(null);
   const [selectedTags, setSelectedTags] = useState<TagTreeNode[]>([]);
   const [tagQuery, setTagQuery] = useState("");
+  const [expandedTagKeys, setExpandedTagKeys] = useState<string[]>([]);
+  const [autoExpandTagParent, setAutoExpandTagParent] = useState(true);
   const [tasks, setTasks] = useState<MaterialTask[]>([]);
   const [products, setProducts] = useState<ProductCardResult[]>([]);
   const [productPage, setProductPage] = useState<ProductPageResult | null>(null);
-  const [libraryQuery, setLibraryQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [fileNameQuery, setFileNameQuery] = useState("");
+  const [fileNameFilter, setFileNameFilter] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("加载素材配置中");
   const [error, setError] = useState("");
@@ -253,23 +309,14 @@ export function MaterialUploadPanel() {
 
   const selectedTagIds = useMemo(() => new Set(selectedTags.map((tag) => tag.id)), [selectedTags]);
   const selectedTagKeys = selectedTags.map((tag) => String(tag.id));
+  const tagSearchState = useMemo(() => collectSearchTagState(tags, tagQuery), [tags, tagQuery]);
   const selectedBizTypeName = useMemo(() => {
     const selectedBizType = flattenBizTypes(bizTypes).find((type) => type.id === selectedBizTypeId);
     return selectedBizType?.typeName || "素材";
   }, [bizTypes, selectedBizTypeId]);
 
-  const libraryCards = useMemo<LibraryCard[]>(() => {
-    const taskCards: LibraryCard[] = tasks.map((task) => ({
-      key: task.id,
-      title: task.fileName,
-      subtitle: parseSummary(task.result?.aiResultJson) || `本地上传 · ${formatSize(task.result?.fileSize || task.fileSize)}`,
-      imageUrl: task.result?.thumbnailUrl || task.previewUrl,
-      status: task.status === "done" ? "已入库" : taskStatusLabel(task.status),
-      tags: task.result?.tags || [],
-      matchedTagIds: new Set(),
-      time: formatTime(task.createdAt)
-    }));
-    const productCards: LibraryCard[] = products.map((product) => {
+  const productCards = useMemo<LibraryCard[]>(() => {
+    return products.map((product) => {
       const matchedTags = product.matchedTags?.length ? product.matchedTags : product.matchedTag ? [product.matchedTag] : [];
       const allTags = product.tags?.length ? product.tags : matchedTags;
       return {
@@ -283,18 +330,9 @@ export function MaterialUploadPanel() {
         time: formatTime(product.createdAt)
       };
     });
+  }, [products, selectedBizTypeName]);
 
-    return [...taskCards, ...productCards].filter((card) => {
-      const keyword = libraryQuery.trim().toLowerCase();
-      const matchKeyword =
-        !keyword ||
-        card.title.toLowerCase().includes(keyword) ||
-        card.subtitle.toLowerCase().includes(keyword) ||
-        card.tags.some((tag) => tag.tagName.toLowerCase().includes(keyword) || tag.tagKey.toLowerCase().includes(keyword));
-      const matchStatus = statusFilter === "all" || card.status === statusFilter;
-      return matchKeyword && matchStatus;
-    });
-  }, [libraryQuery, products, selectedBizTypeName, statusFilter, tasks]);
+  const productDisplayCount = productPage?.total ?? productCards.length;
 
   function toggleSelectedTag(tag: TagTreeNode) {
     if (tag.isLeaf !== 1) return;
@@ -307,6 +345,10 @@ export function MaterialUploadPanel() {
 
   function removeSelectedTag(tagId: number) {
     setSelectedTags((current) => current.filter((tag) => tag.id !== tagId));
+  }
+
+  function submitFileNameSearch() {
+    setFileNameFilter(fileNameQuery.trim());
   }
 
   useEffect(() => {
@@ -363,8 +405,8 @@ export function MaterialUploadPanel() {
           throw new Error(payload.message || "标签加载失败");
         }
         setTags(payload.data);
-        const firstLeafTag = findFirstLeafTag(payload.data);
-        setSelectedTags(firstLeafTag ? [firstLeafTag] : []);
+        setExpandedTagKeys([]);
+        setAutoExpandTagParent(false);
       } catch (loadError) {
         if (!disposed) setError(loadError instanceof Error ? loadError.message : "标签加载失败");
       } finally {
@@ -379,45 +421,102 @@ export function MaterialUploadPanel() {
   }, [selectedBizTypeId]);
 
   useEffect(() => {
-    if (selectedTags.length === 0) {
+    if (tagQuery.trim()) {
+      setExpandedTagKeys(tagSearchState.expandedKeys);
+      setAutoExpandTagParent(true);
+      return;
+    }
+
+    setExpandedTagKeys([]);
+    setAutoExpandTagParent(false);
+  }, [tagQuery, tagSearchState.expandedKeys, tags]);
+
+  const refreshProducts = useCallback(async () => {
+    if (!selectedBizTypeId) {
       setProducts([]);
       setProductPage(null);
       return;
     }
     const tagIds = selectedTags.map((tag) => tag.id);
-    let disposed = false;
+    const fileName = fileNameFilter.trim();
 
-    async function loadProducts() {
-      try {
-        const response = await fetch(withBasePath("/api/materials/products"), {
-          method: "POST",
-          headers: {
-            "content-type": "application/json"
-          },
-          body: JSON.stringify({ tagIds, page: 1, pageSize: 20 }),
-          cache: "no-store"
-        });
-        const payload = (await response.json()) as ApiResponse<ProductPageResult>;
-        if (disposed) return;
-        if (payload.code !== 200 || !payload.data) {
-          throw new Error(payload.message || "素材列表加载失败");
-        }
-        setProductPage(payload.data);
-        setProducts(payload.data.records || []);
-      } catch (loadError) {
-        if (!disposed) {
-          setProducts([]);
-          setProductPage(null);
-          setError(loadError instanceof Error ? loadError.message : "素材列表加载失败");
-        }
+    try {
+      const response = await fetch(withBasePath("/api/materials/products"), {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({ bizTypeId: selectedBizTypeId, tagIds, fileName, page: 1, pageSize: 20 }),
+        cache: "no-store"
+      });
+      const payload = (await response.json()) as ApiResponse<ProductPageResult>;
+      if (payload.code !== 200 || !payload.data) {
+        throw new Error(payload.message || "素材列表加载失败");
       }
+      setProductPage(payload.data);
+      setProducts(payload.data.records || []);
+    } catch (loadError) {
+      setProducts([]);
+      setProductPage(null);
+      setError(loadError instanceof Error ? loadError.message : "素材列表加载失败");
     }
+  }, [fileNameFilter, selectedBizTypeId, selectedTags]);
 
-    void loadProducts();
-    return () => {
-      disposed = true;
-    };
-  }, [selectedTags]);
+  useEffect(() => {
+    void refreshProducts();
+  }, [refreshProducts]);
+
+  const refreshRecentTasks = useCallback(async () => {
+    try {
+      const response = await fetch(withBasePath("/api/materials/recent-tasks"), {
+        cache: "no-store"
+      });
+      const payload = (await response.json()) as ApiResponse<ImageRawResult[]>;
+      if (payload.code !== 200 || !Array.isArray(payload.data)) {
+        throw new Error(payload.message || "最近任务加载失败");
+      }
+
+      setTasks((current) => {
+        const currentByRawId = new Map(
+          current
+            .filter((task) => task.rawId)
+            .map((task) => [task.rawId as number, task] as const)
+        );
+        const rawTasks = payload.data.map((result) => taskFromRawResult(result, currentByRawId.get(result.rawId)));
+        const rawTaskIds = new Set(rawTasks.map((task) => task.rawId));
+        const transientTasks = current.filter(
+          (task) => !task.rawId || (!rawTaskIds.has(task.rawId) && task.status === "uploading")
+        );
+        return [...transientTasks, ...rawTasks].slice(0, 10);
+      });
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "最近任务加载失败");
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshRecentTasks();
+  }, [refreshRecentTasks]);
+
+  const mergeRawResults = useCallback((results: ImageRawResult[]) => {
+    const hasDoneResult = results.some((result) => normalizeStatus(result.status) === "done");
+    setTasks((current) =>
+      current.map((task) => {
+        const result = results.find((entry) => entry.rawId === task.rawId);
+        if (!result) return task;
+        return {
+          ...taskFromRawResult(result, task),
+          id: task.id
+        };
+      })
+    );
+    if (hasDoneResult) {
+      window.setTimeout(() => {
+        void refreshProducts();
+        void refreshRecentTasks();
+      }, 0);
+    }
+  }, [refreshProducts, refreshRecentTasks]);
 
   useEffect(() => {
     if (activeTasks.length === 0) return;
@@ -444,30 +543,7 @@ export function MaterialUploadPanel() {
       disposed = true;
       window.clearInterval(timer);
     };
-  }, [activeTasks]);
-
-  function mergeRawResults(results: ImageRawResult[]) {
-    setTasks((current) =>
-      current.map((task) => {
-        const result = results.find((entry) => entry.rawId === task.rawId);
-        if (!result) return task;
-        const nextStatus = normalizeStatus(result.status);
-        return {
-          ...task,
-          fileName: result.fileName || task.fileName,
-          status: nextStatus,
-          progress: progressFromStatus(result.status),
-          message:
-            nextStatus === "done"
-              ? "AI 标签识别完成"
-              : nextStatus === "failed"
-                ? parseSummary(result.aiResultJson) || "AI 识别失败"
-                : "AI 正在分析图片标签",
-          result
-        };
-      })
-    );
-  }
+  }, [activeTasks, mergeRawResults]);
 
   async function handleFiles(files: File[]) {
     setError("");
@@ -529,13 +605,14 @@ export function MaterialUploadPanel() {
 
       const rawIds = payload.data.map((item) => item.rawId).filter(Boolean);
       if (rawIds.length > 0) await refreshRawResults(rawIds);
+      await refreshRecentTasks();
     } catch (uploadError) {
       const message = uploadError instanceof Error ? uploadError.message : "上传失败";
       setError(message);
       setTasks((current) =>
         current.map((task) =>
           localTasks.some((localTask) => localTask.id === task.id)
-            ? { ...task, status: "failed", progress: 100, message }
+            ? { ...task, status: "upload_failed", progress: 100, message }
             : task
         )
       );
@@ -568,7 +645,7 @@ export function MaterialUploadPanel() {
         <p>图片上传、AI识别、标签筛选与素材管理</p>
       </header>
 
-      {error ? <Alert message={error} type="warning" closable onClose={() => setError("")} /> : null}
+      {error ? <Alert title={error} type="warning" closable onClose={() => setError("")} /> : null}
 
       <div className="antMaterialLayout">
         <Card title="类型分类" extra={<Database size={14} />} className="antMaterialSideCard">
@@ -610,9 +687,14 @@ export function MaterialUploadPanel() {
           {loadingMessage && tags.length === 0 ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={loadingMessage} /> : null}
           <Tree
             blockNode
-            defaultExpandAll
+            autoExpandParent={autoExpandTagParent}
+            expandedKeys={expandedTagKeys}
             selectedKeys={selectedTagKeys}
-            treeData={tagTreeData(tags, tagQuery, selectedTagIds, toggleSelectedTag)}
+            treeData={tagTreeData(tags, tagQuery, selectedTagIds, toggleSelectedTag, tagSearchState.matchedTagIds)}
+            onExpand={(keys) => {
+              setExpandedTagKeys(keys.map(String));
+              setAutoExpandTagParent(false);
+            }}
             onSelect={(_, info) => {
               const id = Number(info.node.key);
               const tag = flattenTags(tags).find((item) => item.id === id);
@@ -626,7 +708,7 @@ export function MaterialUploadPanel() {
           title={
             <Space size={10}>
               <span>素材库</span>
-              <span className="libraryCount">共 {productPage?.total ?? libraryCards.length} 条</span>
+              <span className="libraryCount">共 {productDisplayCount} 条</span>
             </Space>
           }
         >
@@ -634,22 +716,14 @@ export function MaterialUploadPanel() {
             <Input
               allowClear
               prefix={<Search size={15} />}
-              placeholder="搜索文件名、标签、描述"
-              value={libraryQuery}
-              onChange={(event) => setLibraryQuery(event.target.value)}
+              placeholder="搜索文件名"
+              value={fileNameQuery}
+              onChange={(event) => setFileNameQuery(event.target.value)}
+              onPressEnter={submitFileNameSearch}
             />
-            <Select
-              value={statusFilter}
-              suffixIcon={<ChevronDown size={14} />}
-              onChange={setStatusFilter}
-              options={[
-                { value: "all", label: "全部状态" },
-                { value: "已入库", label: "已入库" },
-                { value: "AI 识别中", label: "AI 识别中" },
-                { value: "上传中", label: "上传中" },
-                { value: "识别失败", label: "识别失败" }
-              ]}
-            />
+            <Button type="primary" icon={<Search size={15} />} onClick={submitFileNameSearch}>
+              搜索
+            </Button>
           </div>
 
           <Dragger
@@ -675,63 +749,68 @@ export function MaterialUploadPanel() {
             {tasks.length === 0 ? (
               <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="上传图片后会显示异步识别进度" />
             ) : (
-              tasks.slice(0, 4).map((task) => (
-                <div className="antTaskRow" key={task.id}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={task.result?.thumbnailUrl || task.previewUrl} alt={task.fileName} />
-                  <strong>{task.fileName}</strong>
-                  <Badge status={task.status === "failed" ? "error" : task.status === "done" ? "success" : "processing"} text={taskStatusLabel(task.status)} />
-                  <Progress percent={task.progress} showInfo={false} strokeColor={task.status === "done" ? "#009a82" : "#1677ff"} />
-                  <time>{formatTime(task.createdAt)}</time>
-                  <Button type="link" size="small">
-                    查看详情
-                  </Button>
-                </div>
-              ))
+              <div className="recentTaskList">
+                {tasks.map((task) => (
+                  <div className="antTaskRow" key={task.id}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={task.result?.thumbnailUrl || task.previewUrl} alt={task.fileName} />
+                    <strong>{task.fileName}</strong>
+                    <span className="taskFileSize">{formatSize(task.result?.fileSize || task.fileSize)}</span>
+                    <Badge status={task.status === "failed" || task.status === "upload_failed" ? "error" : task.status === "done" ? "success" : "processing"} text={taskStatusLabel(task.status)} />
+                    <Progress percent={task.progress} showInfo={false} strokeColor={task.status === "done" ? "#009a82" : "#1677ff"} />
+                    <time>{formatTime(task.createdAt)}</time>
+                  </div>
+                ))}
+              </div>
             )}
           </section>
 
-          <section className="antLibraryGrid">
-            {libraryCards.length === 0 ? (
-              <Empty description={selectedTags.length > 0 ? "当前标签暂无素材" : "请选择标签或上传素材"} />
-            ) : (
-              libraryCards.map((card) => (
-                <Card
-                  hoverable
-                  size="small"
-                  key={card.key}
-                  className="antLibraryItem"
-                  cover={
-                    <div className="antLibraryCover">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={card.imageUrl} alt={card.title} />
-                      <Checkbox className="coverCheck" />
-                      <Button className="coverMore" icon={<MoreVertical size={14} />} />
+          <section className="antProductSection">
+            <div className="productSectionHeader">
+              <span>产品素材</span>
+              <small>{productDisplayCount} 个结果</small>
+            </div>
+            <div className="antLibraryGrid">
+              {productCards.length === 0 ? (
+                <Empty description={selectedTags.length > 0 ? "当前标签暂无素材" : "请选择标签或上传素材"} />
+              ) : (
+                productCards.map((card) => (
+                  <Card
+                    hoverable
+                    size="small"
+                    key={card.key}
+                    className="antLibraryItem"
+                    cover={
+                      <div className="antLibraryCover">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={card.imageUrl} alt={card.title} />
+                        <Button className="coverMore" icon={<MoreVertical size={14} />} />
+                      </div>
+                    }
+                  >
+                    <div className="libraryItemTitle">
+                      <strong>{card.title}</strong>
+                      <Tag color={card.status === "已入库" ? "green" : card.status === "识别失败" ? "orange" : "blue"}>{card.status}</Tag>
                     </div>
-                  }
-                >
-                  <div className="libraryItemTitle">
-                    <strong>{card.title}</strong>
-                    <Tag color={card.status === "已入库" ? "green" : card.status === "识别失败" ? "orange" : "blue"}>{card.status}</Tag>
-                  </div>
-                  <p>{card.subtitle}</p>
-                  <Space className="libraryTagList" size={[4, 4]} wrap>
-                    {card.tags.length > 0 ? (
-                      card.tags.slice(0, 6).map((tag) => (
-                        <Tag className={card.matchedTagIds.has(tag.tagId) ? "matchedLibraryTag" : undefined} key={tag.tagId}>
-                          {tag.tagName}
-                        </Tag>
-                      ))
-                    ) : (
-                      <Tag>待识别</Tag>
-                    )}
-                  </Space>
-                  <footer>
-                    <time>{card.time}</time>
-                  </footer>
-                </Card>
-              ))
-            )}
+                    <p>{card.subtitle}</p>
+                    <Space className="libraryTagList" size={[4, 4]} wrap>
+                      {card.tags.length > 0 ? (
+                        card.tags.slice(0, 6).map((tag) => (
+                          <Tag className={card.matchedTagIds.has(tag.tagId) ? "matchedLibraryTag" : undefined} key={tag.tagId}>
+                            {tag.tagName}
+                          </Tag>
+                        ))
+                      ) : (
+                        <Tag>待识别</Tag>
+                      )}
+                    </Space>
+                    <footer>
+                      <time>{card.time}</time>
+                    </footer>
+                  </Card>
+                ))
+              )}
+            </div>
           </section>
         </Card>
       </div>

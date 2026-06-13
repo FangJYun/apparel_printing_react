@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "antd";
 
 const slides = [
   {
@@ -80,16 +81,15 @@ export function HomeCarousel() {
       </div>
       <div className="carouselDots" role="tablist" aria-label="轮播切换">
         {slides.map((item, index) => (
-          <button
+          <Button
             aria-label={`查看${item.title}`}
             aria-current={active === index ? "true" : undefined}
             className={active === index ? "active" : ""}
             key={item.title}
             onClick={() => setActive(index)}
-            type="button"
           >
             <span />
-          </button>
+          </Button>
         ))}
       </div>
     </section>

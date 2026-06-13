@@ -3,6 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { Button } from "antd";
+import { ArrowRight } from "lucide-react";
 import { metrics } from "../data";
 import { withBasePath } from "../path";
 
@@ -90,7 +92,7 @@ export function HeroCarousel() {
           </p>
           <div className="heroActions">
             <Link className="primaryButton" href={slide.primaryHref}>
-              {slide.primaryText} <span aria-hidden="true">▶</span>
+              {slide.primaryText} <ArrowRight aria-hidden="true" size={18} />
             </Link>
             <Link className="ghostButton" href={slide.secondaryHref}>
               {slide.secondaryText}
@@ -111,16 +113,15 @@ export function HeroCarousel() {
 
       <div className="heroDots" role="tablist" aria-label="顶部轮播切换">
         {heroSlides.map((item, index) => (
-          <button
+          <Button
             aria-current={active === index ? "true" : undefined}
             aria-label={`切换到${item.highlight}`}
             className={active === index ? "active" : ""}
             key={item.image}
             onClick={() => setActive(index)}
-            type="button"
           >
             <span />
-          </button>
+          </Button>
         ))}
       </div>
     </section>

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Avatar, Badge, Button } from "antd";
+import { Bell, Building2 } from "lucide-react";
 import { navItems } from "../data";
 
 function Logo() {
@@ -31,16 +33,13 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className="account">
-          <button className="iconButton" aria-label="通知">
-            <span className="badge">8</span>
-            ⌁
-          </button>
+          <Badge count={8} size="small">
+            <Button className="iconButton" aria-label="通知" icon={<Bell size={18} />} />
+          </Badge>
           <Link className="loginButton" href="/login">
             登录
           </Link>
-          <button className="avatar" aria-label="账户">
-            企
-          </button>
+          <Avatar className="avatar" icon={<Building2 size={18} />} />
           <span>织造未来印染有限公司</span>
         </div>
       </header>

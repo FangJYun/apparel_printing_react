@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { adminMenuItems } from "../data";
+import { AdminIcon, MenuChevron } from "./AdminIcon";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -12,7 +13,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <aside className="adminSidebar">
         <Link className="adminBrand" href="/admin">
           <span className="adminBrandIcon" aria-hidden="true">
-            ♜
+            <AdminIcon iconKey="brand" size={24} />
           </span>
           <span>
             <strong>PrintPilot AI</strong>
@@ -26,11 +27,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             return (
               <Link className={active ? "active" : ""} href={item.href} key={item.href}>
                 <span className="menuIcon" aria-hidden="true">
-                  {item.icon}
+                  <AdminIcon iconKey={item.iconKey} size={19} />
                 </span>
                 <span>{item.label}</span>
                 <span className="menuArrow" aria-hidden="true">
-                  ›
+                  <MenuChevron />
                 </span>
               </Link>
             );

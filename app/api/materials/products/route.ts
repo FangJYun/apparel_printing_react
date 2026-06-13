@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
 import { backendUnavailable, backendUrl } from "../_backend";
 
 type ProductListByTagRequest = {
+  bizTypeId?: number;
   tagIds?: number[];
+  fileName?: string;
   page?: number;
   pageSize?: number;
 };
@@ -11,10 +12,6 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as ProductListByTagRequest;
   const tagIds = Array.isArray(body.tagIds) ? body.tagIds.filter((tagId) => Number.isFinite(tagId)) : [];
 
-  if (tagIds.length === 0) {
-    return NextResponse.json({ code: 900, message: "tagIds不能为空", data: null });
-  }
-
   try {
     const response = await fetch(backendUrl("/apparel-printing/product/list-by-tag.do"), {
       method: "POST",
@@ -22,7 +19,9 @@ export async function POST(request: Request) {
         "content-type": "application/json"
       },
       body: JSON.stringify({
+        bizTypeId: Number.isFinite(body.bizTypeId) ? body.bizTypeId : undefined,
         tagIds,
+        fileName: typeof body.fileName === "string" ? body.fileName.trim() : undefined,
         page: body.page || 1,
         pageSize: body.pageSize || 20
       }),

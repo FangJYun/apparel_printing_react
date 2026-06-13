@@ -20,6 +20,12 @@ export async function POST(request: Request) {
       body: formData
     });
     const text = await response.text();
+    if (!response.ok || !text.includes('"code":200')) {
+      console.error("[materials/upload] backend response", {
+        status: response.status,
+        body: text.slice(0, 2000)
+      });
+    }
 
     return new Response(text, {
       status: 200,
@@ -32,4 +38,3 @@ export async function POST(request: Request) {
     return backendUnavailable(message);
   }
 }
-
