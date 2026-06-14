@@ -3,13 +3,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DataNode } from "antd/es/tree";
 import type { RcFile } from "antd/es/upload";
-import { Alert, Badge, Button, Card, Checkbox, Empty, Input, Progress, Space, Tag, Tree, Upload } from "antd";
+import { Alert, Badge, Button, Card, Checkbox, Drawer, Empty, Input, Progress, Space, Tag, Tooltip, Tree, Upload, message } from "antd";
 import {
+  Copy,
   Database,
+  Download,
   Folder,
+  Maximize2,
   MoreVertical,
   Search,
-  UploadCloud
+  UploadCloud,
+  ZoomIn,
+  ZoomOut
 } from "lucide-react";
 import { withBasePath } from "../path";
 
@@ -74,6 +79,9 @@ type ProductCardResult = {
   status: number;
   createdAt: string;
   fileName: string;
+  fileSize?: number;
+  fileObjectKey?: string;
+  thumbnailObjectKey?: string;
   fileUrl: string;
   thumbnailUrl: string;
   matchedTag?: ImageTagResult;
@@ -111,14 +119,32 @@ type LibraryCard = {
   tags: ImageTagResult[];
   matchedTagIds: Set<number>;
   time: string;
+  product: ProductCardResult;
 };
 
 const acceptedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const { Dragger } = Upload;
 
 function formatSize(size: number) {
+  if (!Number.isFinite(size) || size <= 0) return "--";
   if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`;
   return `${Math.max(1, Math.round(size / 1024))} KB`;
+}
+
+function filenameFromContentDisposition(contentDisposition: string | null) {
+  if (!contentDisposition) return "";
+
+  const encodedMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (encodedMatch?.[1]) {
+    try {
+      return decodeURIComponent(encodedMatch[1]);
+    } catch {
+      return encodedMatch[1];
+    }
+  }
+
+  const plainMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+  return plainMatch?.[1] || "";
 }
 
 function formatTime(value?: string) {
@@ -132,6 +158,23 @@ function normalizeStatus(status: number): MaterialTask["status"] {
   if (status === 1) return "done";
   if (status === 2) return "failed";
   return "processing";
+}
+
+function fileExtFromName(fileName?: string) {
+  if (!fileName || !fileName.includes(".")) return "--";
+  return fileName.split(".").pop()?.toUpperCase() || "--";
+}
+
+function confidencePercent(confidence: number | null) {
+  if (!Number.isFinite(confidence || NaN)) return 0;
+  const normalized = confidence && confidence <= 1 ? confidence * 100 : confidence || 0;
+  return Math.max(0, Math.min(100, Math.round(normalized)));
+}
+
+function confidenceColor(percent: number) {
+  if (percent >= 88) return "#009a82";
+  if (percent >= 80) return "#13a779";
+  return "#f59f00";
 }
 
 function progressFromStatus(status: number) {
@@ -298,6 +341,9 @@ export function MaterialUploadPanel() {
   const [productPage, setProductPage] = useState<ProductPageResult | null>(null);
   const [fileNameQuery, setFileNameQuery] = useState("");
   const [fileNameFilter, setFileNameFilter] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<ProductCardResult | null>(null);
+  const [previewScale, setPreviewScale] = useState(1);
+  const [previewSize, setPreviewSize] = useState<{ width: number; height: number } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("加载素材配置中");
   const [error, setError] = useState("");
@@ -327,12 +373,17 @@ export function MaterialUploadPanel() {
         status: product.status === 1 ? "已入库" : "待复核",
         tags: allTags,
         matchedTagIds: new Set(matchedTags.map((tag) => tag.tagId)),
-        time: formatTime(product.createdAt)
+        time: formatTime(product.createdAt),
+        product
       };
     });
   }, [products, selectedBizTypeName]);
 
   const productDisplayCount = productPage?.total ?? productCards.length;
+  const selectedProductTags = useMemo(() => {
+    const tags = selectedProduct?.tags || [];
+    return [...tags].sort((a, b) => confidencePercent(b.confidence) - confidencePercent(a.confidence));
+  }, [selectedProduct]);
 
   function toggleSelectedTag(tag: TagTreeNode) {
     if (tag.isLeaf !== 1) return;
@@ -349,6 +400,51 @@ export function MaterialUploadPanel() {
 
   function submitFileNameSearch() {
     setFileNameFilter(fileNameQuery.trim());
+  }
+
+  function openProductDetail(product: ProductCardResult) {
+    setSelectedProduct(product);
+    setPreviewScale(1);
+    setPreviewSize(null);
+  }
+
+  async function copySelectedProductUrl() {
+    if (!selectedProduct?.fileUrl) {
+      message.warning("暂无可复制的图片地址");
+      return;
+    }
+    await navigator.clipboard?.writeText(selectedProduct.fileUrl);
+    message.success("图片地址已复制");
+  }
+
+  async function downloadSelectedProductOriginal() {
+    if (!selectedProduct?.rawId) {
+      message.warning("暂无可下载的原图");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        withBasePath(`/api/materials/download-original?rawId=${encodeURIComponent(String(selectedProduct.rawId))}`)
+      );
+      if (!response.ok) throw new Error(`Download failed: ${response.status}`);
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download =
+        filenameFromContentDisposition(response.headers.get("content-disposition")) ||
+        selectedProduct.fileName ||
+        `material-${selectedProduct.rawId}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (downloadError) {
+      console.error(downloadError);
+      message.error("原图下载失败");
+    }
   }
 
   useEffect(() => {
@@ -741,7 +837,7 @@ export function MaterialUploadPanel() {
               <UploadCloud size={38} />
             </p>
             <p className="ant-upload-text">拖拽图片到这里，或点击上传</p>
-            <p className="ant-upload-hint">支持 jpg、png、webp；单次最多 10 张，单张最大 60MB</p>
+            <p className="ant-upload-hint">支持 jpg、png、webp；单次最多 10 张，单次最大 100M</p>
           </Dragger>
 
           <section className="antRecentTasks">
@@ -780,11 +876,16 @@ export function MaterialUploadPanel() {
                     size="small"
                     key={card.key}
                     className="antLibraryItem"
-                    cover={
+                    onClick={() => openProductDetail(card.product)}
+                  cover={
                       <div className="antLibraryCover">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={card.imageUrl} alt={card.title} />
-                        <Button className="coverMore" icon={<MoreVertical size={14} />} />
+                        <Button
+                          className="coverMore"
+                          icon={<MoreVertical size={14} />}
+                          onClick={(event) => event.stopPropagation()}
+                        />
                       </div>
                     }
                   >
@@ -814,6 +915,139 @@ export function MaterialUploadPanel() {
           </section>
         </Card>
       </div>
+
+      <Drawer
+        rootClassName="materialDetailDrawerRoot"
+        className="materialDetailDrawer"
+        open={Boolean(selectedProduct)}
+        onClose={() => setSelectedProduct(null)}
+        destroyOnClose
+        title={
+          selectedProduct ? (
+            <div className="detailDrawerTitle">
+              <strong>素材详情</strong>
+              <span>{selectedProduct.fileName || `素材 #${selectedProduct.rawId}`}</span>
+            </div>
+          ) : null
+        }
+        extra={
+          selectedProduct ? (
+            <Space className="detailHeaderActions" size={8}>
+              <Tag color={selectedProduct.status === 1 ? "green" : "blue"}>
+                {selectedProduct.status === 1 ? "已入库" : "待复核"}
+              </Tag>
+              <Tooltip title="下载原图">
+                <Button
+                  type="primary"
+                  aria-label="下载原图"
+                  icon={<Download size={15} />}
+                  onClick={() => void downloadSelectedProductOriginal()}
+                />
+              </Tooltip>
+              <Tooltip title="复制图片地址">
+                <Button
+                  aria-label="复制图片地址"
+                  icon={<Copy size={15} />}
+                  onClick={() => void copySelectedProductUrl()}
+                />
+              </Tooltip>
+            </Space>
+          ) : null
+        }
+      >
+        {selectedProduct ? (
+          <div className="materialDetailContent">
+            <section className="detailSection">
+              <h3>缩略图预览</h3>
+              <div className="detailImageFrame">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={selectedProduct.thumbnailUrl || selectedProduct.fileUrl}
+                  alt={selectedProduct.fileName}
+                  style={{ transform: `scale(${previewScale})` }}
+                  onLoad={(event) => {
+                    setPreviewSize({
+                      width: event.currentTarget.naturalWidth,
+                      height: event.currentTarget.naturalHeight
+                    });
+                  }}
+                />
+              </div>
+              <div className="detailPreviewToolbar">
+                <Button
+                  icon={<ZoomOut size={14} />}
+                  onClick={() => setPreviewScale((scale) => Math.max(0.5, Number((scale - 0.1).toFixed(1))))}
+                />
+                <span>{Math.round(previewScale * 100)}%</span>
+                <Button
+                  icon={<ZoomIn size={14} />}
+                  onClick={() => setPreviewScale((scale) => Math.min(2, Number((scale + 0.1).toFixed(1))))}
+                />
+                <Button icon={<Maximize2 size={14} />} onClick={() => setPreviewScale(1)}>
+                  适应窗口
+                </Button>
+              </div>
+            </section>
+
+            <section className="detailSection">
+              <h3>文件信息</h3>
+              <div className="detailInfoGrid">
+                <div>
+                  <span>raw_id</span>
+                  <strong>{selectedProduct.rawId}</strong>
+                </div>
+                <div>
+                  <span>预览尺寸</span>
+                  <strong>{previewSize ? `${previewSize.width} x ${previewSize.height}` : "--"}</strong>
+                </div>
+                <div>
+                  <span>文件大小</span>
+                  <strong>{formatSize(selectedProduct.fileSize || 0)}</strong>
+                </div>
+                <div>
+                  <span>来源</span>
+                  <strong>上传</strong>
+                </div>
+                <div>
+                  <span>格式</span>
+                  <strong>{fileExtFromName(selectedProduct.fileName)}</strong>
+                </div>
+                <div>
+                  <span>入库时间</span>
+                  <strong>{formatTime(selectedProduct.createdAt)}</strong>
+                </div>
+              </div>
+            </section>
+
+            <section className="detailSection">
+              <div className="detailSectionHeader">
+                <h3>AI 识别结果 <span>共 {selectedProductTags.length} 个</span></h3>
+                <p>进度条表示 AI 对该标签的置信度</p>
+              </div>
+              <div className="detailAiList">
+                {selectedProductTags.length === 0 ? (
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无识别标签" />
+                ) : (
+                  selectedProductTags.map((tag) => {
+                    const percent = confidencePercent(tag.confidence);
+                    return (
+                      <div className="detailAiRow" key={tag.tagId}>
+                        <Tag>{tag.tagName}</Tag>
+                        <span>{percent ? `${percent}%` : "--"}</span>
+                        <Progress
+                          percent={percent}
+                          showInfo={false}
+                          strokeColor={confidenceColor(percent)}
+                        />
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </section>
+          </div>
+        ) : null}
+      </Drawer>
     </section>
   );
 }

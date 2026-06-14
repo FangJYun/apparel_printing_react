@@ -2594,7 +2594,11 @@ main {
 
 .antMaterialStudio {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 14px;
+  height: calc(100vh - 56px);
+  min-height: 0;
+  overflow: hidden;
   color: #111827;
 }
 
@@ -2613,11 +2617,13 @@ main {
 }
 
 .antMaterialLayout {
-  --material-panel-height: max(640px, calc(100vh - 118px));
+  --material-panel-height: 100%;
   display: grid;
   grid-template-columns: 190px 230px minmax(0, 1fr);
   gap: 8px;
   align-items: stretch;
+  height: 100%;
+  min-height: 0;
   min-width: 0;
 }
 
@@ -2911,6 +2917,11 @@ main {
   border-radius: 8px !important;
 }
 
+.antLibraryItem,
+.antLibraryItem .ant-card-cover {
+  cursor: pointer;
+}
+
 .antLibraryItem .ant-card-body {
   display: grid;
   gap: 8px;
@@ -2987,6 +2998,198 @@ main {
   font-size: 12px;
 }
 
+.materialDetailDrawerRoot .ant-drawer-content-wrapper {
+  width: min(520px, 100vw) !important;
+}
+
+.materialDetailDrawer .ant-drawer-content {
+  background: #fffdfa;
+}
+
+.materialDetailDrawer .ant-drawer-header {
+  padding: 18px 24px 14px;
+  border-bottom-color: #e5ece8;
+}
+
+.materialDetailDrawer .ant-drawer-body {
+  padding: 0 24px 22px;
+}
+
+.detailHeaderActions {
+  flex-wrap: nowrap;
+}
+
+.detailHeaderActions .ant-tag {
+  margin-inline-end: 2px;
+}
+
+.detailHeaderActions .ant-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+
+.detailDrawerTitle {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.detailDrawerTitle strong {
+  color: #101828;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.detailDrawerTitle span {
+  overflow: hidden;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.materialDetailContent {
+  display: grid;
+  gap: 18px;
+}
+
+.detailSection {
+  display: grid;
+  gap: 12px;
+  padding-top: 18px;
+}
+
+.detailSection + .detailSection {
+  border-top: 1px solid #e5ece8;
+}
+
+.detailSection h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.detailSection h3 span {
+  color: #667085;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.detailImageFrame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 320px;
+  overflow: hidden;
+  border: 1px solid #e1e9e4;
+  border-radius: 8px;
+  background: #f4f8f6;
+}
+
+.detailImageFrame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: center center;
+  transition: transform 160ms ease;
+}
+
+.detailPreviewToolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.detailPreviewToolbar .ant-btn {
+  height: 32px;
+}
+
+.detailPreviewToolbar > span {
+  min-width: 54px;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.detailInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 24px;
+}
+
+.detailInfoGrid div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.detailInfoGrid span {
+  color: #667085;
+  font-size: 12px;
+}
+
+.detailInfoGrid strong {
+  overflow: hidden;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detailSectionHeader {
+  display: grid;
+  gap: 4px;
+}
+
+.detailSectionHeader p {
+  margin: 0;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.detailAiList {
+  display: grid;
+  gap: 10px;
+}
+
+.detailAiRow {
+  display: grid;
+  grid-template-columns: minmax(72px, 108px) 42px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.detailAiRow .ant-tag {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+  border-color: #cbeedd;
+  background: #e8f7ef;
+  color: #067a64;
+  font-weight: 700;
+  text-overflow: ellipsis;
+}
+
+.detailAiRow > span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+}
+
 @media (max-width: 1500px) and (min-width: 1181px) {
   .materialConsole {
     grid-template-columns: 190px 240px minmax(0, 1fr);
@@ -3003,7 +3206,7 @@ main {
   }
 
   .antMaterialLayout {
-    --material-panel-height: max(560px, calc(100vh - 118px));
+    --material-panel-height: 100%;
     grid-template-columns: 170px 210px minmax(0, 1fr);
   }
 
@@ -3070,6 +3273,12 @@ main {
 }
 
 @media (max-width: 1180px) {
+  .antMaterialStudio {
+    grid-template-rows: none;
+    height: auto;
+    overflow: visible;
+  }
+
   .adminShell {
     grid-template-columns: 1fr;
   }
@@ -3140,7 +3349,9 @@ main {
   }
 
   .antMaterialLayout {
+    --material-panel-height: auto;
     grid-template-columns: 1fr;
+    height: auto;
   }
 
   .materialTypePanel,
@@ -3150,7 +3361,9 @@ main {
   }
 
   .antMaterialSideCard,
-  .antMaterialFilterCard {
+  .antMaterialFilterCard,
+  .antMaterialLibraryCard {
+    height: auto;
     max-height: none;
     min-height: auto;
   }
