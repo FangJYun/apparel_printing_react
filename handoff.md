@@ -2,6 +2,66 @@
 
 用于新开 Codex 会话、切换账号或交接开发时快速恢复 `apparel_printing_react` 项目上下文。
 
+## 2026-06-23 最新交接摘要：AI 生图页面与可复用标签组件
+
+本轮主要完成后台 `AI 生图` 菜单页前端实现和后端接口代理对接，页面路径为 `/admin/ai-image`。
+
+### 已实现页面能力
+
+- 新增 `app/admin/ai-image/page.tsx`，挂载 `AiImagePanel`。
+- 新增核心组件 `app/components/AiImagePanel.tsx`：
+  - 左侧生成设置，右侧生成结果和最近生成任务。
+  - 支持业务类型选择，切换业务类型会清空已选参考图和标签。
+  - 参考图片默认不选中；从素材库产品列表选择参考图。
+  - 参考图片选中后展示缩略图、文件名、文件大小和素材标签。
+  - 参考图片右上角提供“更换参考图片”和“清空参考图片”，文件名超出省略并支持 hover 查看完整文件名。
+  - 支持模型选择，模型列表来自后端 `/image2/models.do`。
+  - 图片尺寸来自 `/image2/size-configs.do`，参数使用当前业务类型 `bizTypeId`。
+  - 提示词 placeholder 只作为示例，不占用字数。
+  - 反向提示词保留“反向提示词（可选）”描述。
+  - 生成数量选项为 `1/2/3/4`，默认选中 `1`。
+  - 创建任务调用后端 `generate.do`，随后轮询任务详情。
+  - 生成结果区预留 4 图网格；图片支持预览、保存、下载。
+  - 最近生成任务区展示任务表格，操作列已移除，状态用小字展示，失败进度条为红色。
+- 新增可复用标签选择组件 `app/components/TagTreePicker.tsx`：
+  - 使用 Ant Design `Popover`、`Input`、`Checkbox`、`Tag`、`Button`，图标来自 `lucide-react`。
+  - 触发器显示 `请选择叶子标签` 或 `已选 N 个标签`。
+  - 下拉浮层宽度收窄到 `360px`。
+  - 初次点开树默认不展开；搜索时自动展开匹配路径。
+  - 只能选择叶子节点。
+  - 父级节点会根据子叶子选择状态展示半选/全选图标，但父级复选框是只读展示，点击父级只展开/收起，不会勾选或取消整组。
+  - 组件不在触发器下方回显已选标签 chips，避免占用生成设置区空间。
+
+### 前端代理接口
+
+新增 `app/api/image2/` 下的 Next.js API 代理，统一转发 Java 后端：
+
+```text
+POST /api/image2/generate-task      -> /apparel-printing/image2/generate.do
+GET  /api/image2/size-configs       -> /apparel-printing/image2/size-configs.do
+GET  /api/image2/models             -> /apparel-printing/image2/models.do
+GET  /api/image2/task-detail        -> /apparel-printing/image2/task-detail.do
+GET  /api/image2/recent-tasks       -> /apparel-printing/image2/recent-tasks.do
+POST /api/image2/save-result        -> /apparel-printing/image2/save-result.do
+GET  /api/image2/download-result    -> /apparel-printing/image2/download-result.do
+POST /api/image2/template/save      -> /apparel-printing/image2/template/save.do
+```
+
+注意：
+
+- 后端曾移除 `generate-task.do`，当前前端代理路径仍叫 `/api/image2/generate-task`，但实际转发到后端 `generate.do`。
+- 本地前端代理默认后端地址依赖项目已有后端 URL 工具；BS 服务器环境需要确认后端地址指向 `http://54.232.61.198:8090/apparel-printing/web/` 或对应内网地址。
+
+### 本轮相关文件
+
+```text
+app/admin/ai-image/page.tsx
+app/components/AiImagePanel.tsx
+app/components/TagTreePicker.tsx
+app/api/image2/*
+app/globals.css
+```
+
 ## 项目概览
 
 - 项目目录：`/Users/fangjiayun/myproject/trend/apparel_printing_react`
@@ -84,6 +144,13 @@
   - build 输出目录改为 `.next-build/`
   - `.gitignore` 忽略 `.next-build/`
   - `scripts/build-next.mjs` 构建后会恢复 `next-env.d.ts` 的 dev routes 引用，减少 dev/build 切换污染。
+- 2026-06-23 完成后台“AI 生图”菜单页：
+  - 页面路径：`/admin/ai-image`
+  - 核心组件：`app/components/AiImagePanel.tsx`
+  - 可复用标签组件：`app/components/TagTreePicker.tsx`
+  - 新增 `app/api/image2/*` 代理接口，转发 Java 后端 AI 生图接口。
+  - 业务类型、参考图、标签、模型、尺寸、提示词、生成数量、生成结果、最近任务均已接入页面。
+  - 标签组件最终交互：默认不展开、只允许叶子节点选择、父级只读展示选中/半选状态。
 - 已推送 GitHub：
   - `1c65fe6 Initial apparel printing portal`
   - `2a8f13f Add project README`
@@ -181,6 +248,21 @@ curl -X POST http://localhost:3000/api/materials/products \
 - 文件名搜索 `VN0065` 返回 `total: 1`。
 - 浏览器实测 `/admin/materials` 默认产品 4 条，搜索 `VN0065` 后产品区变为 1 条。
 - 右侧素材库内容区无横向滚动；最近任务超过三条时内部纵向滚动。
+
+2026-06-23 AI 生图页面和标签组件验证：
+
+```bash
+node node_modules/typescript/bin/tsc --noEmit
+npm run build
+```
+
+验证结果：
+
+- TypeScript 检查通过。
+- Next build 通过。
+- `/admin/ai-image` 页面本地可访问。
+- 标签组件默认不展开；搜索时才展开匹配树。
+- 标签组件只提交叶子标签 ID；父级节点只展示汇总状态。
 
 服务器已验证：
 
@@ -283,12 +365,12 @@ sudo sed -n "1,220p" /opt/dify/docker/nginx/conf.d/default.conf.template
 
 ## 下一步建议
 
-1. 把本次前端变更发布到服务器后，访问 `http://54.232.61.198/apparel/admin/materials` 验证素材库页面。
-2. 和最新 Java 后端一起验证图片上传、最近任务、标签筛选、文件名搜索、产品入库刷新。
-3. 后续继续补齐素材卡片更多操作、下载/删除/重新识别等功能。
-4. 如果要绑定独立域名，可在现有 Docker nginx 内新增域名 server 配置。
+1. 把本次前端变更发布到服务器后，访问 `http://54.232.61.198/apparel/admin/ai-image` 验证 AI 生图页面。
+2. 和最新 Java 后端一起验证模型列表、尺寸配置、参考图选择、标签选择、生成任务、保存和下载。
+3. 继续根据真实生成结果调整生成结果卡片和最近任务表格的密度。
+4. 如后续其它页面需要标签选择，直接复用 `TagTreePicker`，不要再单独做 Modal + Tree。
 
 ## 最近更新时间
 
-- 日期：2026-06-13
+- 日期：2026-06-23
 - 更新人：Codex

@@ -1,5 +1,5 @@
-import { AdminPlaceholder } from "../../components/AdminPlaceholder";
+import { AiImagePanel } from "../../components/AiImagePanel";
 
 export default function AdminPlaceholderPage() {
-  return <AdminPlaceholder title="AI 生图" />;
+  return <AiImagePanel />;
 }

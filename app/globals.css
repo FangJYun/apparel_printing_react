@@ -3190,6 +3190,996 @@ main {
   text-align: right;
 }
 
+.aiImageStudio {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 14px;
+  height: calc(100vh - 56px);
+  min-height: 0;
+  overflow: hidden;
+  color: #111827;
+}
+
+.aiImageHeader h1 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 30px;
+  line-height: 1.05;
+}
+
+.aiImageHeader p {
+  margin: 8px 0 0;
+  color: #344054;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.aiImageLayout {
+  display: grid;
+  grid-template-columns: minmax(360px, 420px) minmax(0, 1fr);
+  gap: 14px;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+.aiImageLayout .ant-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-color: #d9e3df;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.aiImageLayout .ant-card-head {
+  flex: 0 0 auto;
+  min-height: 48px;
+  border-bottom: 0;
+  padding: 0 20px;
+}
+
+.aiImageLayout .ant-card-head-title {
+  color: #111827;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.aiImageLayout .ant-card-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.aiImageSettings,
+.aiImageMain {
+  min-height: 0;
+}
+
+.aiImageSettings {
+  height: 100%;
+  overflow: hidden;
+}
+
+.aiImageSettings .ant-card-body {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 0;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.aiSettingsScroll {
+  display: grid;
+  gap: 14px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 8px 20px 12px;
+  scrollbar-width: thin;
+}
+
+.aiSettingBlock {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.aiSettingBlock h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.referenceMaterial {
+  display: grid;
+  grid-template-columns: 154px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  min-width: 0;
+}
+
+.referenceCover {
+  position: relative;
+  display: block;
+  aspect-ratio: 1.34 / 1;
+  overflow: hidden;
+  border: 1px solid #8fcbbd;
+  border-radius: 8px;
+  background: #f4f8f6;
+}
+
+.referenceCover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.referenceCoverActions {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.referenceCoverActions .ant-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(217, 227, 223, 0.96);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #344054;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
+.referenceCoverActions .ant-btn:hover {
+  border-color: #0f9f86 !important;
+  background: #ffffff !important;
+  color: #007f6b !important;
+}
+
+.referenceMaterial strong {
+  display: block;
+  overflow: hidden;
+  color: #111827;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.referenceMaterial p {
+  margin: 8px 0 14px;
+  color: #667085;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.emptyReferenceButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 96px;
+  border: 1px dashed #8fcbbd;
+  border-radius: 8px;
+  background: #fbfffd;
+  color: #007f6b;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.aiTagCloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.aiTagCloud .ant-tag {
+  margin-inline-end: 0;
+  border: 0;
+  background: #f2f4f3;
+  color: #344054;
+  font-weight: 700;
+}
+
+.mutedInline {
+  color: #98a2b3;
+  font-size: 12px;
+}
+
+.tagSelectButton {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  justify-content: stretch;
+  width: 100%;
+  height: 48px !important;
+  border-color: #0f9f86 !important;
+  color: #0b5f51 !important;
+  font-weight: 900 !important;
+  text-align: left;
+}
+
+.tagSelectButton span:nth-child(3) {
+  justify-self: end;
+  color: #667085;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tagTreePickerTrigger {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 48px;
+  border: 1px solid #0f9f86;
+  border-radius: 8px;
+  background: #fbfffd;
+  color: #0b5f51;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0 14px;
+  text-align: left;
+}
+
+.tagTreePickerTrigger:hover,
+.tagTreePickerTrigger:focus-visible,
+.tagTreePickerTrigger.open {
+  border-color: #0b8f78;
+  box-shadow: 0 0 0 2px rgba(15, 159, 134, 0.12);
+  outline: none;
+}
+
+.tagTreePickerTrigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.tagTreePickerTrigger > svg {
+  color: #0b8f78;
+}
+
+.tagTreePickerTrigger > span {
+  overflow: hidden;
+  color: #1f2937;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tagTreePickerPopover .ant-popover-inner {
+  width: min(360px, calc(100vw - 32px));
+  overflow: hidden;
+  border: 1px solid #d9e3df;
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.16);
+  padding: 0;
+}
+
+.tagTreePickerPopover .ant-popover-inner-content {
+  padding: 0;
+}
+
+.tagTreePickerPanel {
+  display: grid;
+  grid-template-rows: auto auto minmax(180px, 1fr) auto;
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(620px, calc(100vh - 96px));
+  background: #ffffff;
+}
+
+.tagTreePickerSearch {
+  display: flex;
+  width: calc(100% - 32px) !important;
+  max-width: calc(100% - 32px);
+  height: 44px;
+  margin: 16px 16px 10px;
+  border-color: #d9e3df;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.tagTreePickerSearch .ant-input-prefix {
+  color: #4b5563;
+  margin-inline-end: 8px;
+}
+
+.tagTreePickerSelected {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 16px 10px;
+}
+
+.tagTreePickerSelected .ant-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  margin-inline-end: 0;
+  border: 0;
+  border-radius: 7px;
+  background: #f2f4f3;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tagTreePickerSelected > span {
+  color: #98a2b3;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 28px;
+}
+
+.tagTreePickerTree {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 16px 16px;
+  scrollbar-width: thin;
+}
+
+.tagTreePickerNode {
+  display: grid;
+  gap: 2px;
+}
+
+.tagTreePickerRow {
+  display: grid;
+  grid-template-columns: 22px 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  border-radius: 8px;
+  color: #344054;
+}
+
+.tagTreePickerRow:hover {
+  background: #f6fbf9;
+}
+
+.tagTreePickerExpand,
+.tagTreePickerName {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.tagTreePickerExpand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: #0f172a;
+}
+
+.tagTreePickerName {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tagTreePickerRow.leaf.checked .tagTreePickerName {
+  color: #0b8f78;
+}
+
+.tagTreePickerPanel .ant-checkbox-wrapper {
+  line-height: 1;
+}
+
+.tagTreePickerReadonlyCheck {
+  display: inline-flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.tagTreePickerPanel .ant-checkbox-inner {
+  border-color: #cfd8d4;
+  border-radius: 3px;
+}
+
+.tagTreePickerPanel .ant-checkbox-checked .ant-checkbox-inner,
+.tagTreePickerPanel .ant-checkbox-indeterminate .ant-checkbox-inner::after {
+  background-color: #087f6d;
+  border-color: #087f6d;
+}
+
+.tagTreePickerFooter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  border-top: 1px solid #edf2ef;
+  background: #ffffff;
+  padding: 14px 16px 16px;
+}
+
+.tagTreePickerFooter .ant-btn {
+  height: 42px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.tagTreePickerFooter .ant-btn-primary {
+  background: linear-gradient(180deg, #00a98f 0%, #007d68 100%);
+}
+
+.aiBizTypeTrigger {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 48px;
+  border: 1px solid #0f9f86;
+  border-radius: 8px;
+  background: #fbfffd;
+  color: #0b5f51;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  padding: 0 14px;
+  text-align: left;
+}
+
+.aiBizTypeTrigger:hover,
+.aiBizTypeTrigger:focus-visible {
+  border-color: #0b8f78;
+  box-shadow: 0 0 0 2px rgba(15, 159, 134, 0.12);
+  outline: none;
+}
+
+.aiBizTypeTrigger > svg:first-child {
+  color: #0b8f78;
+}
+
+.aiBizTypeTrigger > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aiBizTypeTrigger > span:nth-of-type(2) {
+  justify-self: end;
+  color: #667085;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.aiBizTypeTrigger > svg:last-child {
+  color: #0b5f51;
+}
+
+.aiSettingBlock .ant-input,
+.aiSettingBlock .ant-input-affix-wrapper,
+.aiSettingBlock .ant-input-outlined {
+  border-color: #d9e3df;
+}
+
+.aiFieldLabel {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.aiSettingBlock .ant-input-textarea-show-count::after,
+.aiSettingBlock .ant-input-show-count-suffix {
+  color: #98a2b3;
+  font-size: 12px;
+}
+
+.aiModelSelect {
+  width: 100%;
+}
+
+.aiModelSelect .ant-select-selector {
+  min-height: 48px;
+  border-color: #d9e3df !important;
+  border-radius: 8px !important;
+  background: #fbfffd !important;
+  padding: 6px 12px !important;
+}
+
+.aiModelSelect .ant-select-selection-item {
+  display: flex;
+  align-items: center;
+  font-weight: 800;
+}
+
+.bizTypePickerPopover .ant-popover-inner {
+  width: min(420px, calc(100vw - 32px));
+  overflow: hidden;
+  border: 1px solid #d9e3df;
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.16);
+  padding: 0;
+}
+
+.bizTypePickerPopover .ant-popover-inner-content {
+  padding: 0;
+}
+
+.bizTypePickerPanel {
+  display: grid;
+  grid-template-rows: auto minmax(180px, 1fr) auto;
+  max-height: min(560px, calc(100vh - 120px));
+  background: #ffffff;
+}
+
+.bizTypePickerSearch {
+  display: flex;
+  width: calc(100% - 32px) !important;
+  max-width: calc(100% - 32px);
+  height: 44px;
+  margin: 16px;
+  border-color: #d9e3df;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.bizTypePickerSearch .ant-input-prefix {
+  color: #4b5563;
+  margin-inline-end: 8px;
+}
+
+.bizTypePickerTree {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 16px 16px;
+  scrollbar-width: thin;
+}
+
+.bizTypePickerNode {
+  display: grid;
+  gap: 2px;
+}
+
+.bizTypePickerRow {
+  display: grid;
+  grid-template-columns: 22px 26px minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #344054;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.bizTypePickerRow:hover {
+  background: #f6fbf9;
+}
+
+.bizTypePickerRow.active {
+  background: #edf8f3;
+  color: #0b8f78;
+}
+
+.bizTypePickerToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: #0f172a;
+}
+
+.bizTypePickerRow > svg {
+  color: #667085;
+}
+
+.bizTypePickerRow.active > svg,
+.bizTypePickerCheck {
+  color: #0b8f78;
+}
+
+.bizTypePickerRow > span:nth-child(3) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bizTypePickerCheck {
+  justify-self: end;
+}
+
+.bizTypePickerFooter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  border-top: 1px solid #edf2ef;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.bizTypePickerFooter > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #667085;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.bizTypePickerFooter > span svg {
+  flex: 0 0 auto;
+  color: #f97316;
+}
+
+.bizTypePickerFooter .ant-btn {
+  height: 38px;
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.bizTypePickerFooter .ant-btn-primary {
+  background: linear-gradient(180deg, #00a98f 0%, #007d68 100%);
+}
+
+.aiModelOption {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.aiModelOption strong {
+  overflow: hidden;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aiModelOption small {
+  overflow: hidden;
+  color: #667085;
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sizeConfigGrid,
+.countGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sizeConfigGrid button,
+.countGrid button {
+  min-width: 0;
+  border: 1px solid #d9e3df;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #344054;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.sizeConfigGrid button {
+  display: grid;
+  gap: 4px;
+  min-height: 50px;
+  padding: 7px 8px;
+}
+
+.sizeConfigGrid strong {
+  color: #111827;
+  font-size: 14px;
+}
+
+.sizeConfigGrid span {
+  color: #667085;
+  font-size: 11px;
+}
+
+.countGrid button {
+  height: 38px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.sizeConfigEmpty {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  min-height: 54px;
+  border: 1px dashed #d9e3df;
+  border-radius: 8px;
+  background: #fbfdfc;
+  color: #98a2b3;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 12px;
+}
+
+.sizeConfigGrid button.active,
+.countGrid button.active {
+  border-color: #009a82;
+  background: #e7f8f2;
+  box-shadow: inset 0 0 0 1px #009a82;
+  color: #007f6b;
+}
+
+.aiGenerateActions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 0.65fr);
+  gap: 10px;
+  border-top: 1px solid #edf2ef;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, #ffffff 100%);
+  padding: 10px 20px 12px;
+}
+
+.aiGenerateActions .ant-btn {
+  height: 40px;
+}
+
+.aiGenerateActions .ant-btn-primary {
+  background: linear-gradient(180deg, #00a98f 0%, #007d68 100%);
+  box-shadow: 0 12px 26px rgba(0, 125, 104, 0.22);
+}
+
+.spinIcon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.aiImageMain {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 196px;
+  gap: 14px;
+  min-width: 0;
+}
+
+.aiResultCard,
+.aiRecentTaskCard {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.aiResultCard .ant-card-body {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 12px 18px 16px;
+  scrollbar-width: thin;
+}
+
+.aiResultCard .ant-card-extra .ant-btn {
+  height: 32px;
+}
+
+.aiResultCard small {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.aiResultGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+.aiResultItem {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dfe7e3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.aiResultCover {
+  position: relative;
+  aspect-ratio: 2.06 / 1;
+  overflow: hidden;
+  background: #edf3ef;
+}
+
+.aiResultCover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.aiResultCover .ant-tag {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  border: 0;
+  font-weight: 900;
+}
+
+.aiResultItem footer {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 8px 12px 10px;
+}
+
+.aiResultItem footer .ant-btn {
+  justify-content: center;
+  height: 34px;
+  padding: 0 10px;
+}
+
+.aiResultEmpty {
+  display: grid;
+  align-content: center;
+  gap: 18px;
+  min-height: 320px;
+}
+
+.aiRecentTaskCard .ant-card-body {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 12px 10px;
+  scrollbar-width: thin;
+}
+
+.aiTaskTable {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.aiTaskHead,
+.aiTaskRecord {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.9fr) 46px minmax(150px, 1.55fr) 48px minmax(108px, 1fr) 116px;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.aiTaskHead {
+  min-height: 34px;
+  background: rgba(248, 252, 250, 0.9);
+  color: #667085;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 0 12px;
+}
+
+.aiTaskRows {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.aiTaskRecord {
+  min-height: 48px;
+  border-top: 1px solid #edf2ef;
+  padding: 6px 12px;
+}
+
+.aiTaskRecord > span:first-child,
+.aiTaskRecord p {
+  min-width: 0;
+  overflow: hidden;
+  color: #344054;
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aiTaskRecord img {
+  width: 36px;
+  height: 36px;
+  border-radius: 5px;
+  object-fit: cover;
+  background: #edf3ef;
+}
+
+.aiTaskRecord time,
+.aiTaskRecord > span:nth-child(4) {
+  color: #667085;
+  font-size: 12px;
+}
+
+.aiTaskStatus > span {
+  color: #344054;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.aiTaskRecord .ant-progress {
+  margin-top: 2px;
+  min-width: 0;
+}
+
+.referencePickerGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.referencePickerGrid button {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid #dfe7e3;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  padding: 8px;
+  text-align: left;
+}
+
+.referencePickerGrid button.active {
+  border-color: #009a82;
+  box-shadow: 0 0 0 2px rgba(0, 154, 130, 0.14);
+}
+
+.referencePickerGrid img {
+  width: 100%;
+  aspect-ratio: 1.72 / 1;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.referencePickerGrid strong {
+  overflow: hidden;
+  color: #111827;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.referencePickerGrid span {
+  color: #667085;
+  font-size: 12px;
+}
+
+.aiPreviewImage {
+  display: block;
+  width: 100%;
+  max-height: 72vh;
+  border-radius: 8px;
+  object-fit: contain;
+  background: #f4f8f6;
+}
+
 @media (max-width: 1500px) and (min-width: 1181px) {
   .materialConsole {
     grid-template-columns: 190px 240px minmax(0, 1fr);
@@ -3379,6 +4369,49 @@ main {
 
   .antLibraryGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .aiImageStudio {
+    grid-template-rows: none;
+    height: auto;
+    overflow: visible;
+  }
+
+  .aiImageLayout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .aiImageSettings,
+  .aiImageMain,
+  .aiResultCard,
+  .aiRecentTaskCard {
+    height: auto;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .aiImageSettings .ant-card-body {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  .aiSettingsScroll {
+    overflow: visible;
+  }
+
+  .aiGenerateActions {
+    position: static;
+  }
+
+  .aiImageMain {
+    grid-template-rows: auto auto;
+  }
+
+  .aiResultCard .ant-card-body {
+    max-height: none;
+    min-height: 320px;
   }
 
   .taskRows article {
