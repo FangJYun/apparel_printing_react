@@ -2992,10 +2992,33 @@ main {
 
 .antLibraryItem footer {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
   color: #667085;
   font-size: 12px;
+}
+
+.libraryCardActions {
+  min-width: 0;
+}
+
+.libraryCardActions .ant-btn {
+  width: 28px;
+  height: 28px;
+  border-color: #dfe7e3;
+  border-radius: 7px;
+  color: #475467;
+}
+
+.libraryCardActions .ant-btn:hover {
+  border-color: #0f9f86 !important;
+  color: #008d76 !important;
+}
+
+.antLibraryItem footer time {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 .materialDetailDrawerRoot .ant-drawer-content-wrapper {
@@ -3461,7 +3484,7 @@ main {
 }
 
 .tagTreePickerPopover .ant-popover-inner {
-  width: min(360px, calc(100vw - 32px));
+  width: min(320px, calc(100vw - 32px));
   overflow: hidden;
   border: 1px solid #d9e3df;
   border-radius: 12px;
@@ -3476,8 +3499,9 @@ main {
 .tagTreePickerPanel {
   display: grid;
   grid-template-rows: auto auto minmax(180px, 1fr) auto;
-  width: min(360px, calc(100vw - 32px));
-  max-height: min(620px, calc(100vh - 96px));
+  width: min(320px, calc(100vw - 32px));
+  height: min(460px, calc(100vh - 96px));
+  max-height: min(460px, calc(100vh - 96px));
   background: #ffffff;
 }
 
@@ -3551,6 +3575,19 @@ main {
   background: #f6fbf9;
 }
 
+.tagTreePickerRow.folder {
+  color: #667085;
+}
+
+.tagTreePickerRow.folder .tagTreePickerName {
+  color: #667085;
+  font-weight: 600;
+}
+
+.tagTreePickerRow.folder:hover {
+  background: #f8faf9;
+}
+
 .tagTreePickerExpand,
 .tagTreePickerName {
   border: 0;
@@ -3591,6 +3628,7 @@ main {
 .tagTreePickerReadonlyCheck {
   display: inline-flex;
   align-items: center;
+  opacity: 0.72;
   pointer-events: none;
 }
 
@@ -3624,11 +3662,11 @@ main {
   background: linear-gradient(180deg, #00a98f 0%, #007d68 100%);
 }
 
-.aiBizTypeTrigger {
+.promptTemplateTrigger {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   height: 48px;
   border: 1px solid #0f9f86;
@@ -3637,7 +3675,265 @@ main {
   color: #0b5f51;
   cursor: pointer;
   font: inherit;
+  font-weight: 700;
+  padding: 0 14px;
+  text-align: left;
+}
+
+.promptTemplateTrigger:hover,
+.promptTemplateTrigger:focus-visible,
+.promptTemplateTrigger.open {
+  border-color: #0b8f78;
+  box-shadow: 0 0 0 2px rgba(15, 159, 134, 0.12);
+  outline: none;
+}
+
+.promptTemplateTrigger > svg:first-child,
+.promptTemplateTrigger > svg:last-child {
+  color: #0b8f78;
+}
+
+.promptTemplateTrigger > svg:first-child {
+  width: 16px;
+  height: 16px;
+}
+
+.promptTemplateTrigger > span {
+  overflow: hidden;
+  color: #1f2937;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.promptTemplateTrigger > span:nth-of-type(2) {
+  justify-self: end;
+  max-width: 120px;
+  color: #087f6d;
+  font-size: 12px;
   font-weight: 900;
+}
+
+.promptTemplateClearButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  color: #667085 !important;
+}
+
+.promptTemplateTriggerActions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  color: #0b8f78 !important;
+}
+
+.promptTemplateTriggerActions > svg {
+  flex: 0 0 auto;
+}
+
+.promptTemplateClearButton:hover,
+.promptTemplateClearButton:focus-visible {
+  background: #eef2f1;
+  color: #0b5f51 !important;
+  outline: none;
+}
+
+.promptTemplateClearButton svg {
+  width: 14px;
+  height: 14px;
+}
+
+.promptTemplatePopover .ant-popover-inner {
+  width: min(400px, calc(100vw - 32px));
+  overflow: hidden;
+  border: 1px solid #d9e3df;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12);
+  padding: 0;
+}
+
+.promptTemplatePopover {
+  z-index: 1600;
+}
+
+.promptTemplatePopover .ant-popover-content {
+  position: relative;
+  z-index: 1;
+}
+
+.promptTemplatePopover .ant-popover-inner-content {
+  padding: 0;
+}
+
+.promptTemplatePanel {
+  display: grid;
+  grid-template-rows: auto minmax(180px, 1fr);
+  width: min(400px, calc(100vw - 32px));
+  height: min(560px, calc(100vh - 120px));
+  background: #ffffff;
+  border-radius: 12px;
+}
+
+.promptTemplateSearch {
+  display: flex;
+  width: calc(100% - 32px) !important;
+  max-width: calc(100% - 32px);
+  height: 50px;
+  margin: 18px 16px 14px;
+  border-color: #d9e3df;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.promptTemplateSearch .ant-input-prefix {
+  color: #4b5563;
+  margin-inline-end: 10px;
+}
+
+.promptTemplateSearch .ant-input {
+  color: #1f2937;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.promptTemplateList {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 12px 16px;
+  scrollbar-width: thin;
+}
+
+.promptTemplateItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 30px;
+  gap: 10px;
+  align-items: start;
+  min-height: 164px;
+  border-left: 3px solid transparent;
+  border-radius: 8px;
+  border-bottom: 1px solid #edf2ef;
+  padding: 16px 10px 16px 14px;
+}
+
+.promptTemplateItem:hover,
+.promptTemplateItem.active {
+  background: linear-gradient(90deg, rgba(15, 159, 134, 0.12) 0%, rgba(15, 159, 134, 0.04) 100%);
+  border-left-color: #0f9f86;
+}
+
+.promptTemplateUseArea,
+.promptTemplateDeleteButton {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.promptTemplateUseArea {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.promptTemplateName {
+  overflow: hidden;
+  color: #111827;
+  font-size: 17px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.promptTemplateChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.promptTemplateChipRow > span {
+  display: inline-flex;
+  align-items: center;
+  max-width: 160px;
+  min-height: 30px;
+  overflow: hidden;
+  border: 1px solid #dfe7e3;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #344054;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 4px 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.promptTemplatePromptLine {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.promptTemplatePromptLine em {
+  color: #98a2b3;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.promptTemplatePromptLine > span {
+  overflow: hidden;
+  color: #667085;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.promptTemplateDeleteButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: #344054;
+}
+
+.promptTemplateDeleteButton:hover {
+  background: #fff1f2;
+  color: #ef4444;
+}
+
+.aiBizTypeTrigger {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 48px;
+  border: 1px solid #0f9f86;
+  border-radius: 8px;
+  background: #fbfffd;
+  color: #0b5f51;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
   padding: 0 14px;
   text-align: left;
 }
@@ -3655,6 +3951,10 @@ main {
 
 .aiBizTypeTrigger > span {
   overflow: hidden;
+  color: #1f2937;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -3707,7 +4007,7 @@ main {
 }
 
 .bizTypePickerPopover .ant-popover-inner {
-  width: min(420px, calc(100vw - 32px));
+  width: min(320px, calc(100vw - 32px));
   overflow: hidden;
   border: 1px solid #d9e3df;
   border-radius: 12px;
@@ -3722,6 +4022,7 @@ main {
 .bizTypePickerPanel {
   display: grid;
   grid-template-rows: auto minmax(180px, 1fr) auto;
+  width: min(320px, calc(100vw - 32px));
   max-height: min(560px, calc(100vh - 120px));
   background: #ffffff;
 }
@@ -3766,8 +4067,9 @@ main {
   background: transparent;
   color: #344054;
   cursor: pointer;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
   text-align: left;
 }
 
@@ -3836,7 +4138,7 @@ main {
 .bizTypePickerFooter .ant-btn {
   height: 38px;
   border-radius: 8px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .bizTypePickerFooter .ant-btn-primary {
@@ -3886,10 +4188,11 @@ main {
 }
 
 .sizeConfigGrid button {
-  display: grid;
-  gap: 4px;
-  min-height: 50px;
-  padding: 7px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px;
 }
 
 .sizeConfigGrid strong {
@@ -4110,6 +4413,26 @@ main {
   background: #edf3ef;
 }
 
+.aiTaskImagePlaceholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px dashed #cfd8d4;
+  border-radius: 5px;
+  background: #f6faf8;
+  color: #98a2b3;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.aiTaskRecord p.aiTaskMutedText {
+  color: #98a2b3;
+  font-weight: 600;
+}
+
 .aiTaskRecord time,
 .aiTaskRecord > span:nth-child(4) {
   color: #667085;
@@ -4171,13 +4494,264 @@ main {
   font-size: 12px;
 }
 
-.aiPreviewImage {
+.referencePickerDrawerRoot .ant-drawer-content-wrapper {
+  width: min(640px, 100vw) !important;
+}
+
+.referencePickerDrawer .ant-drawer-content {
+  border-radius: 16px 0 0 16px;
+  overflow: hidden;
+}
+
+.referencePickerDrawer .ant-drawer-body {
+  padding: 0;
+}
+
+.referenceDrawerShell {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  height: 100%;
+  min-height: 0;
+  background: #ffffff;
+}
+
+.referenceDrawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 28px 18px;
+}
+
+.referenceDrawerHeader h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.referenceDrawerToolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 12px;
+  padding: 0 28px 18px;
+}
+
+.referenceDrawerToolbar .ant-input-affix-wrapper {
+  min-height: 40px;
+  border-radius: 8px !important;
+}
+
+.referenceDrawerTagFilter {
+  min-width: 0;
+}
+
+.referenceDrawerTagFilter .tagTreePickerTrigger {
+  height: 40px;
+  min-height: 40px;
+  gap: 8px;
+  border-color: #d9e3df;
+  border-radius: 8px;
+  padding: 0 12px;
+}
+
+.referenceDrawerTagFilter .tagTreePickerTrigger.open,
+.referenceDrawerTagFilter .tagTreePickerTrigger:focus-visible {
+  border-color: #0f9f86;
+  box-shadow: 0 0 0 2px rgba(15, 159, 134, 0.1);
+}
+
+.referenceDrawerTagFilter .tagTreePickerTrigger > svg {
+  width: 16px;
+  height: 16px;
+}
+
+.referenceDrawerTagFilter .tagTreePickerTrigger > span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.referenceDrawerContent {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 28px 18px;
+}
+
+.referenceDrawerGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.referenceDrawerCard {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid #dfe7e3;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.referenceDrawerCard:hover,
+.referenceDrawerCard.active {
+  border-color: #009a82;
+  box-shadow: 0 0 0 2px rgba(0, 154, 130, 0.14), 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+
+.referenceDrawerCover {
+  position: relative;
+  background: #f4f8f6;
+}
+
+.referenceDrawerCover img {
   display: block;
   width: 100%;
-  max-height: 72vh;
+  aspect-ratio: 1.55 / 1;
+  object-fit: cover;
+}
+
+.referenceDrawerCheck {
+  position: absolute;
+  top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #dce6e2;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #667085;
+}
+
+.referenceDrawerCheck {
+  left: 10px;
+}
+
+.referenceDrawerCard.active .referenceDrawerCheck {
+  border-color: #008775;
+  background: #008775;
+  color: #ffffff;
+}
+
+.referenceDrawerMeta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 12px 6px;
+}
+
+.referenceDrawerMeta strong {
+  overflow: hidden;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.referenceDrawerTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px 12px;
+}
+
+.referenceDrawerTags .ant-tag {
+  margin: 0;
+  border: 0;
+  border-radius: 6px;
+  background: #f3f5f4;
+  color: #344054;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 7px;
+}
+
+.referenceDrawerPager {
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid #edf2ef;
+  padding: 12px 28px 14px;
+}
+
+.referenceDrawerFooter {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  border-top: 1px solid #edf2ef;
+  padding: 18px 28px 26px;
+}
+
+.referenceDrawerFooter .ant-btn {
+  height: 48px;
   border-radius: 8px;
-  object-fit: contain;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.referenceDrawerFooter .ant-btn-primary {
+  background: linear-gradient(180deg, #02a98d 0%, #007f6a 100%);
+  box-shadow: 0 10px 20px rgba(0, 127, 106, 0.18);
+}
+
+.aiPreviewModal .ant-modal-body {
+  padding-top: 8px;
+}
+
+.aiPreviewShell {
+  display: grid;
+  gap: 12px;
+}
+
+.aiPreviewCanvas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: min(72vh, 720px);
+  min-height: 480px;
+  overflow: auto;
+  border-radius: 8px;
   background: #f4f8f6;
+}
+
+.aiPreviewImage {
+  display: block;
+  flex: 0 0 auto;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+}
+
+.aiPreviewToolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+
+.aiPreviewToolbar .ant-btn {
+  height: 34px;
+  border-radius: 7px;
+}
+
+.aiPreviewToolbar > span {
+  min-width: 48px;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
 }
 
 @media (max-width: 1500px) and (min-width: 1181px) {

@@ -2,9 +2,26 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { Badge, Button, Card, Empty, Input, Modal, Popover, Progress, Select, Skeleton, Space, Tag, Tooltip, message } from "antd";
+import {
+  Badge,
+  Button,
+  Card,
+  Drawer,
+  Empty,
+  Input,
+  Modal,
+  Pagination,
+  Popover,
+  Progress,
+  Select,
+  Skeleton,
+  Space,
+  Tag,
+  Tooltip,
+  message
+} from "antd";
 import {
   AlertCircle,
   Check,
@@ -16,15 +33,21 @@ import {
   Folder,
   ImagePlus,
   LoaderCircle,
+  Maximize2,
   MoreVertical,
   Save,
   Search,
   Shapes,
   Sparkles,
-  Trash2
+  Trash2,
+  X,
+  ZoomIn,
+  ZoomOut
 } from "lucide-react";
 import { withBasePath } from "../path";
 import { TagTreePicker } from "./TagTreePicker";
+
+const IMAGE2_REFERENCE_STORAGE_KEY = "apparel-printing:image2-reference-product";
 
 type ApiResponse<T> = {
   code: number;
@@ -64,6 +87,7 @@ type ProductCardResult = {
   rawId: number;
   bizTypeId: number;
   status: number;
+  aiStatus?: number;
   createdAt: string;
   fileName: string;
   fileSize?: number;
@@ -141,6 +165,33 @@ type Image2TaskDetailResult = {
   images: Image2TaskImageResult[];
 };
 
+type Image2PromptTemplateResult = {
+  templateId: number;
+  templateName: string;
+  referenceProductId?: number;
+  referenceRawId?: number;
+  referenceFileName?: string;
+  referenceThumbnailUrl?: string;
+  bizTypeId?: number;
+  modelName?: string;
+  sizeConfigId?: number;
+  prompt?: string;
+  negativePrompt?: string;
+  count?: number;
+  tagIds?: number[];
+  status?: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+type Image2PromptTemplatePageResult = {
+  page: number;
+  pageSize: number;
+  total: number;
+  pages: number;
+  records: Image2PromptTemplateResult[];
+};
+
 type ImageUploadResult = {
   rawId: number;
   status: number;
@@ -151,6 +202,10 @@ const countOptions = [1, 2, 3, 4];
 
 function flattenBizTypes(nodes: BizTypeTreeNode[]): BizTypeTreeNode[] {
   return nodes.flatMap((node) => [node, ...flattenBizTypes(node.children || [])]);
+}
+
+function flattenTagNodes(nodes: TagTreeNode[]): TagTreeNode[] {
+  return nodes.flatMap((node) => [node, ...flattenTagNodes(node.children || [])]);
 }
 
 function findPrintBizType(nodes: BizTypeTreeNode[]) {
@@ -401,6 +456,157 @@ function BusinessTypePicker({ bizTypes, value, onConfirm }: BusinessTypePickerPr
   );
 }
 
+type PromptTemplatePickerProps = {
+  templates: Image2PromptTemplateResult[];
+  open: boolean;
+  keyword: string;
+  selectedTemplateId: number | null;
+  loading: boolean;
+  getBizTypeName: (id?: number) => string;
+  getSizeText: (id?: number) => string;
+  getTemplateTagNames: (template: Image2PromptTemplateResult) => string[];
+  onOpenChange: (open: boolean) => void;
+  onKeywordChange: (value: string) => void;
+  onUse: (template: Image2PromptTemplateResult) => void;
+  onDelete: (template: Image2PromptTemplateResult) => void;
+  onClear: () => void;
+};
+
+function PromptTemplatePicker({
+  templates,
+  open,
+  keyword,
+  selectedTemplateId,
+  loading,
+  getBizTypeName,
+  getSizeText,
+  getTemplateTagNames,
+  onOpenChange,
+  onKeywordChange,
+  onUse,
+  onDelete,
+  onClear
+}: PromptTemplatePickerProps) {
+  const selectedTemplate = templates.find((template) => template.templateId === selectedTemplateId) || null;
+  const visibleTemplates = templates.filter((template) => {
+    const term = keyword.trim().toLowerCase();
+    if (!term) return true;
+    return (
+      template.templateName.toLowerCase().includes(term) ||
+      (template.prompt || "").toLowerCase().includes(term) ||
+      (template.negativePrompt || "").toLowerCase().includes(term)
+    );
+  });
+
+  const content = (
+    <div className="promptTemplatePanel">
+      <Input
+        className="promptTemplateSearch"
+        prefix={<Search size={17} />}
+        value={keyword}
+        placeholder="搜索模板"
+        onChange={(event) => onKeywordChange(event.target.value)}
+      />
+      <div className="promptTemplateList">
+        {visibleTemplates.length ? (
+          visibleTemplates.map((template) => {
+            const active = template.templateId === selectedTemplateId;
+            const tagNames = getTemplateTagNames(template);
+            const visibleTagNames = tagNames.slice(0, 5);
+            const hiddenTagCount = Math.max(0, tagNames.length - visibleTagNames.length);
+            return (
+              <article className={active ? "promptTemplateItem active" : "promptTemplateItem"} key={template.templateId}>
+                <button className="promptTemplateUseArea" type="button" onClick={() => onUse(template)}>
+                  <strong className="promptTemplateName">{template.templateName}</strong>
+                  <span className="promptTemplateChipRow">
+                    <span>{getBizTypeName(template.bizTypeId)}</span>
+                    <span>{getSizeText(template.sizeConfigId)}</span>
+                    <span>{template.count || 1}张</span>
+                  </span>
+                  <span className="promptTemplateChipRow">
+                    {visibleTagNames.map((name) => (
+                      <span key={name}>{name}</span>
+                    ))}
+                    {hiddenTagCount > 0 ? <span>+{hiddenTagCount}</span> : null}
+                  </span>
+                  <span className="promptTemplatePromptLine">
+                    <em>正向</em>
+                    <span>{template.prompt || "未填写提示词"}</span>
+                  </span>
+                  <span className="promptTemplatePromptLine">
+                    <em>反向</em>
+                    <span>{template.negativePrompt || "未填写反向提示词"}</span>
+                  </span>
+                </button>
+                <Tooltip title="删除模板">
+                  <button
+                    aria-label={`删除模板 ${template.templateName}`}
+                    className="promptTemplateDeleteButton"
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDelete(template);
+                    }}
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </Tooltip>
+              </article>
+            );
+          })
+        ) : (
+          <Empty description={loading ? "模板加载中" : "暂无提示词模板"} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <Popover
+      arrow={false}
+      content={content}
+      open={open}
+      overlayClassName="promptTemplatePopover"
+      placement="bottomLeft"
+      trigger="click"
+      onOpenChange={onOpenChange}
+    >
+      <button className={open ? "promptTemplateTrigger open" : "promptTemplateTrigger"} type="button">
+        <FileText size={16} />
+        <span>选择模板</span>
+        <span>{selectedTemplate?.templateName || "未选择"}</span>
+        <span className="promptTemplateTriggerActions">
+          {selectedTemplate ? (
+            <Tooltip title="取消模板选择">
+              <span
+                aria-label="取消模板选择"
+                className="promptTemplateClearButton"
+                role="button"
+                tabIndex={0}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onClear();
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onClear();
+                  }
+                }}
+              >
+                <X size={14} />
+              </span>
+            </Tooltip>
+          ) : null}
+          {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </span>
+      </button>
+    </Popover>
+  );
+}
+
 export function AiImagePanel() {
   const [bizTypes, setBizTypes] = useState<BizTypeTreeNode[]>([]);
   const [bizTypeId, setBizTypeId] = useState<number | null>(null);
@@ -418,23 +624,94 @@ export function AiImagePanel() {
   const [currentTask, setCurrentTask] = useState<Image2TaskDetailResult | null>(null);
   const [recentTasks, setRecentTasks] = useState<Image2TaskDetailResult[]>([]);
   const [previewImage, setPreviewImage] = useState<Image2TaskImageResult | null>(null);
-  const [referenceModalOpen, setReferenceModalOpen] = useState(false);
+  const [previewScale, setPreviewScale] = useState(1);
+  const [referenceDrawerOpen, setReferenceDrawerOpen] = useState(false);
+  const [draftReferenceRawId, setDraftReferenceRawId] = useState<number | null>(null);
+  const [referenceKeyword, setReferenceKeyword] = useState("");
+  const [referenceFilterTagIds, setReferenceFilterTagIds] = useState<number[]>([]);
+  const [referencePage, setReferencePage] = useState(1);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
+  const [promptTemplates, setPromptTemplates] = useState<Image2PromptTemplateResult[]>([]);
+  const [promptTemplateOpen, setPromptTemplateOpen] = useState(false);
+  const [promptTemplateKeyword, setPromptTemplateKeyword] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
+  const [templateLoading, setTemplateLoading] = useState(false);
+  const [pendingTemplateTagIds, setPendingTemplateTagIds] = useState<number[] | null>(null);
+  const [pendingTemplateSizeConfigId, setPendingTemplateSizeConfigId] = useState<number | null>(null);
+  const [pendingTemplateReferenceProductId, setPendingTemplateReferenceProductId] = useState<number | null>(null);
   const [loading, setLoading] = useState("");
   const [sizeConfigError, setSizeConfigError] = useState("");
   const [generating, setGenerating] = useState(false);
+  const templateReferenceRequestRef = useRef(0);
 
   const currentImages = currentTask?.images || [];
   const isTaskRunning = currentTask ? currentTask.status === 0 || currentTask.status === 1 : false;
   const currentStatus = currentTask?.status ?? (generating ? 1 : 0);
   const referenceBizTypeId = referenceProduct?.bizTypeId || bizTypeId;
   const selectedModel = models.find((model) => model.modelName === selectedModelName) || models[0] || null;
+  const referencePageSize = 6;
+  const filteredReferenceProducts = useMemo(() => {
+    const keyword = referenceKeyword.trim().toLowerCase();
+    return products.filter((product) => {
+      const tagsForProduct = product.tags || product.matchedTags || [];
+      const tagNames = tagsForProduct.map((tag) => tag.tagName);
+      const productTagIds = new Set(tagsForProduct.map((tag) => tag.tagId));
+      const matchesKeyword =
+        !keyword ||
+        product.fileName.toLowerCase().includes(keyword) ||
+        tagNames.some((tagName) => tagName.toLowerCase().includes(keyword));
+      const matchesSelectedTags =
+        !referenceFilterTagIds.length || referenceFilterTagIds.every((tagId) => productTagIds.has(tagId));
+      return matchesKeyword && matchesSelectedTags;
+    });
+  }, [products, referenceFilterTagIds, referenceKeyword]);
+  const pagedReferenceProducts = useMemo(() => {
+    const start = (referencePage - 1) * referencePageSize;
+    return filteredReferenceProducts.slice(start, start + referencePageSize);
+  }, [filteredReferenceProducts, referencePage]);
+  const draftReferenceProduct = products.find((product) => product.rawId === draftReferenceRawId) || null;
   const visibleSizeConfigs = useMemo(() => {
     if (!selectedModelName) return sizeConfigs;
     const matched = sizeConfigs.filter((item) => item.modelName === selectedModelName);
     return matched.length ? matched : sizeConfigs;
   }, [selectedModelName, sizeConfigs]);
+  const allBizTypes = useMemo(() => flattenBizTypes(bizTypes), [bizTypes]);
+  const sizeConfigMap = useMemo(
+    () => new Map(sizeConfigs.map((item) => [item.sizeConfigId, item])),
+    [sizeConfigs]
+  );
+  const tagNameMap = useMemo(() => new Map(flattenTagNodes(tags).map((item) => [item.id, item.tagName])), [tags]);
+
+  const getBizTypeName = useCallback(
+    (id?: number) => allBizTypes.find((item) => item.id === id)?.typeName || "未分类",
+    [allBizTypes]
+  );
+
+  const getSizeText = useCallback(
+    (id?: number) => {
+      const config = id ? sizeConfigMap.get(id) : null;
+      if (!config) return "默认尺寸";
+      return config.aspectRatio || "自定义";
+    },
+    [sizeConfigMap]
+  );
+
+  const getTemplateTagNames = useCallback(
+    (template: Image2PromptTemplateResult) =>
+      (template.tagIds || []).map((id) => tagNameMap.get(Number(id)) || `标签${id}`).filter(Boolean),
+    [tagNameMap]
+  );
+
+  const loadPromptTemplates = useCallback(async () => {
+    setTemplateLoading(true);
+    try {
+      const data = await apiJson<Image2PromptTemplatePageResult>("/api/image2/template/list?page=1&pageSize=50");
+      setPromptTemplates(Array.isArray(data?.records) ? data.records : []);
+    } finally {
+      setTemplateLoading(false);
+    }
+  }, []);
 
   const loadRecentTasks = useCallback(async () => {
     const data = await apiJson<Image2TaskDetailResult[]>("/api/image2/recent-tasks?limit=10");
@@ -473,10 +750,30 @@ export function AiImagePanel() {
 
     void bootstrap();
     void loadRecentTasks().catch(() => undefined);
+    void loadPromptTemplates().catch(() => undefined);
     return () => {
       disposed = true;
     };
-  }, [loadRecentTasks]);
+  }, [loadPromptTemplates, loadRecentTasks]);
+
+  useEffect(() => {
+    if (!bizTypes.length) return;
+
+    try {
+      const storedReference = window.localStorage.getItem(IMAGE2_REFERENCE_STORAGE_KEY);
+      if (!storedReference) return;
+
+      const product = JSON.parse(storedReference) as ProductCardResult;
+      const referenceRawId = Number(new URLSearchParams(window.location.search).get("referenceRawId"));
+      if (!product?.rawId || (Number.isFinite(referenceRawId) && referenceRawId > 0 && product.rawId !== referenceRawId)) return;
+
+      setReferenceProduct(product);
+      if (product.bizTypeId) setBizTypeId(product.bizTypeId);
+      window.localStorage.removeItem(IMAGE2_REFERENCE_STORAGE_KEY);
+    } catch {
+      window.localStorage.removeItem(IMAGE2_REFERENCE_STORAGE_KEY);
+    }
+  }, [bizTypes.length]);
 
   useEffect(() => {
     if (!bizTypeId) return;
@@ -518,7 +815,6 @@ export function AiImagePanel() {
         ]);
         if (disposed) return;
 
-        setSelectedTagIds([]);
         if (tagResult.status === "fulfilled") {
           setTags(tagResult.value || []);
         } else {
@@ -556,6 +852,11 @@ export function AiImagePanel() {
   }, [referenceBizTypeId, selectedModelName]);
 
   useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(filteredReferenceProducts.length / referencePageSize));
+    if (referencePage > maxPage) setReferencePage(maxPage);
+  }, [filteredReferenceProducts.length, referencePage]);
+
+  useEffect(() => {
     if (!currentTask || !isTaskRunning) return;
     const timer = window.setInterval(() => {
       void loadTaskDetail(currentTask.taskId)
@@ -569,17 +870,38 @@ export function AiImagePanel() {
     return () => window.clearInterval(timer);
   }, [currentTask, isTaskRunning, loadRecentTasks, loadTaskDetail]);
 
+  useEffect(() => {
+    if (!pendingTemplateTagIds) return;
+    setSelectedTagIds(pendingTemplateTagIds);
+    setPendingTemplateTagIds(null);
+  }, [pendingTemplateTagIds, tags]);
+
+  useEffect(() => {
+    if (!pendingTemplateSizeConfigId) return;
+    const exists = sizeConfigs.some((item) => item.sizeConfigId === pendingTemplateSizeConfigId);
+    if (!exists) return;
+    setSizeConfigId(pendingTemplateSizeConfigId);
+    setPendingTemplateSizeConfigId(null);
+  }, [pendingTemplateSizeConfigId, sizeConfigs]);
+
+  useEffect(() => {
+    if (!pendingTemplateReferenceProductId) return;
+    const matched = products.find((product) => product.productId === pendingTemplateReferenceProductId);
+    if (!matched) return;
+    setReferenceProduct(matched);
+    setPendingTemplateReferenceProductId(null);
+  }, [pendingTemplateReferenceProductId, products]);
+
   async function generateImages() {
-    if (!referenceProduct) {
-      message.warning("请先选择参考图片");
-      return;
-    }
     if (!referenceBizTypeId || !sizeConfigId) {
       message.warning("尺寸配置还未加载完成");
       return;
     }
-    if (!prompt.trim()) {
-      message.warning("请输入提示词");
+    const hasReferenceImage = Boolean(referenceProduct?.rawId);
+    const hasPrompt = Boolean(prompt.trim());
+    const hasTags = selectedTagIds.length > 0;
+    if (!hasReferenceImage && !hasPrompt && !hasTags) {
+      message.warning("请至少选择参考图、标签或填写提示词中的一项");
       return;
     }
 
@@ -588,7 +910,7 @@ export function AiImagePanel() {
       const result = await apiJson<Image2GenerateTaskResult>("/api/image2/generate-task", {
         method: "POST",
         body: JSON.stringify({
-          referenceRawId: referenceProduct.rawId,
+          referenceRawId: referenceProduct?.rawId || 0,
           bizTypeId: referenceBizTypeId,
           modelName: selectedModel?.modelName,
           prompt: prompt.trim(),
@@ -657,7 +979,7 @@ export function AiImagePanel() {
         method: "POST",
         body: JSON.stringify({
           templateName: templateName.trim(),
-          referenceRawId: referenceProduct?.rawId || 0,
+          referenceProductId: referenceProduct?.productId || 0,
           bizTypeId: referenceBizTypeId,
           modelName: selectedModel?.modelName,
           prompt: prompt.trim(),
@@ -670,9 +992,154 @@ export function AiImagePanel() {
       message.success("模板保存成功");
       setTemplateModalOpen(false);
       setTemplateName("");
+      void loadPromptTemplates().catch(() => undefined);
     } catch (error) {
       message.error(error instanceof Error ? error.message : "模板保存失败");
     }
+  }
+
+  async function loadProductDetail(productId: number) {
+    return apiJson<ProductCardResult>(`/api/materials/product-detail?productId=${encodeURIComponent(String(productId))}`);
+  }
+
+  async function applyPromptTemplate(template: Image2PromptTemplateResult) {
+    const referenceRequestId = templateReferenceRequestRef.current + 1;
+    templateReferenceRequestRef.current = referenceRequestId;
+    const nextBizTypeId = template.bizTypeId ? Number(template.bizTypeId) : bizTypeId;
+    const templateTagIds = (template.tagIds || []).map(Number).filter((item) => Number.isFinite(item) && item > 0);
+    const nextSizeConfigId = template.sizeConfigId ? Number(template.sizeConfigId) : null;
+    const templateReferenceProductId = Number(template.referenceProductId || 0);
+    const legacyReferenceRawId = Number(template.referenceRawId || 0);
+
+    setSelectedTemplateId(template.templateId);
+    setPrompt(template.prompt || "");
+    setNegativePrompt(template.negativePrompt || "");
+    setCount(countOptions.includes(template.count || 0) ? Number(template.count) : 1);
+    if (template.modelName) setSelectedModelName(template.modelName);
+    if (nextSizeConfigId) setPendingTemplateSizeConfigId(nextSizeConfigId);
+
+    if (nextBizTypeId && nextBizTypeId !== bizTypeId) {
+      setBizTypeId(nextBizTypeId);
+      setPendingTemplateTagIds(templateTagIds);
+    } else {
+      setSelectedTagIds(templateTagIds);
+    }
+
+    if (templateReferenceProductId > 0) {
+      const matchedReferenceProduct = products.find((product) => product.productId === templateReferenceProductId);
+      if (matchedReferenceProduct?.rawId) {
+        setReferenceProduct(matchedReferenceProduct);
+        setPendingTemplateReferenceProductId(null);
+      } else {
+        setPendingTemplateReferenceProductId(templateReferenceProductId);
+        try {
+          const productDetail = await loadProductDetail(templateReferenceProductId);
+          if (templateReferenceRequestRef.current !== referenceRequestId) return;
+          setReferenceProduct(productDetail);
+          setPendingTemplateReferenceProductId(null);
+        } catch (error) {
+          if (templateReferenceRequestRef.current !== referenceRequestId) return;
+          if (template.referenceThumbnailUrl) {
+            setReferenceProduct({
+              productId: templateReferenceProductId,
+              rawId: 0,
+              bizTypeId: Number(nextBizTypeId || template.bizTypeId || 0),
+              status: 1,
+              aiStatus: 1,
+              createdAt: template.createdAt || "",
+              fileName: template.referenceFileName || `product-${templateReferenceProductId}`,
+              fileUrl: template.referenceThumbnailUrl,
+              thumbnailUrl: template.referenceThumbnailUrl,
+              tags: []
+            });
+          } else {
+            setReferenceProduct(null);
+          }
+          message.warning(error instanceof Error ? error.message : "参考图详情加载失败");
+        }
+      }
+    } else if (legacyReferenceRawId > 0 && template.referenceThumbnailUrl) {
+      setReferenceProduct({
+        productId: 0,
+        rawId: legacyReferenceRawId,
+        bizTypeId: Number(nextBizTypeId || template.bizTypeId || 0),
+        status: 1,
+        aiStatus: 1,
+        createdAt: template.createdAt || "",
+        fileName: template.referenceFileName || `raw-${legacyReferenceRawId}`,
+        fileUrl: template.referenceThumbnailUrl,
+        thumbnailUrl: template.referenceThumbnailUrl,
+        tags: []
+      });
+    } else {
+      setReferenceProduct(null);
+      setPendingTemplateReferenceProductId(null);
+    }
+
+    setPromptTemplateOpen(false);
+    setPromptTemplateKeyword("");
+    message.success("模板已应用");
+  }
+
+  function clearPromptTemplateSelection() {
+    templateReferenceRequestRef.current += 1;
+    setSelectedTemplateId(null);
+    setReferenceProduct(null);
+    setSelectedTagIds([]);
+    setPendingTemplateTagIds(null);
+    setPendingTemplateReferenceProductId(null);
+    setPrompt("");
+    setNegativePrompt("");
+    setCount(1);
+    setPendingTemplateSizeConfigId(null);
+    setSizeConfigId(
+      visibleSizeConfigs.find((item) => item.isDefault === 1)?.sizeConfigId || visibleSizeConfigs[0]?.sizeConfigId || null
+    );
+  }
+
+  function deletePromptTemplate(template: Image2PromptTemplateResult) {
+    Modal.confirm({
+      title: "删除提示词模板",
+      content: `确认删除“${template.templateName}”吗？`,
+      okText: "删除",
+      okButtonProps: { danger: true },
+      cancelText: "取消",
+      async onOk() {
+        try {
+          await apiJson("/api/image2/template/delete", {
+            method: "POST",
+            body: JSON.stringify({ templateId: template.templateId })
+          });
+          setPromptTemplates((current) => current.filter((item) => item.templateId !== template.templateId));
+          if (selectedTemplateId === template.templateId) setSelectedTemplateId(null);
+          message.success("模板已删除");
+        } catch (error) {
+          message.error(error instanceof Error ? error.message : "模板删除失败");
+        }
+      }
+    });
+  }
+
+  function openReferenceDrawer() {
+    setDraftReferenceRawId(referenceProduct?.rawId || null);
+    setReferenceKeyword("");
+    setReferenceFilterTagIds([]);
+    setReferencePage(1);
+    setReferenceDrawerOpen(true);
+  }
+
+  function confirmReferenceProduct() {
+    if (!draftReferenceProduct) {
+      message.warning("请选择参考图片");
+      return;
+    }
+    setReferenceProduct(draftReferenceProduct);
+    setReferenceDrawerOpen(false);
+  }
+
+  function openImagePreview(image: Image2TaskImageResult) {
+    setPreviewScale(1);
+    setPreviewImage(image);
   }
 
   return (
@@ -685,6 +1152,33 @@ export function AiImagePanel() {
       <div className="aiImageLayout">
         <Card title="生成设置" className="aiImageSettings">
           <div className="aiSettingsScroll">
+            <section className="aiSettingBlock">
+              <h2>提示词模板</h2>
+              <PromptTemplatePicker
+                templates={promptTemplates}
+                open={promptTemplateOpen}
+                keyword={promptTemplateKeyword}
+                selectedTemplateId={selectedTemplateId}
+                loading={templateLoading}
+                getBizTypeName={getBizTypeName}
+                getSizeText={getSizeText}
+                getTemplateTagNames={getTemplateTagNames}
+                onOpenChange={(nextOpen) => {
+                  setPromptTemplateOpen(nextOpen);
+                  if (nextOpen) {
+                    setPromptTemplateKeyword("");
+                    void loadPromptTemplates().catch((error) =>
+                      message.error(error instanceof Error ? error.message : "模板列表加载失败")
+                    );
+                  }
+                }}
+                onKeywordChange={setPromptTemplateKeyword}
+                onUse={applyPromptTemplate}
+                onDelete={deletePromptTemplate}
+                onClear={clearPromptTemplateSelection}
+              />
+            </section>
+
             <section className="aiSettingBlock">
               <h2>1. 业务类型</h2>
               <BusinessTypePicker
@@ -713,7 +1207,7 @@ export function AiImagePanel() {
                           icon={<ImagePlus size={15} />}
                           size="small"
                           type="text"
-                          onClick={() => setReferenceModalOpen(true)}
+                          onClick={openReferenceDrawer}
                         />
                       </Tooltip>
                       <Tooltip title="清空参考图片">
@@ -740,7 +1234,7 @@ export function AiImagePanel() {
                   </div>
                 </div>
               ) : (
-                <button className="emptyReferenceButton" type="button" onClick={() => setReferenceModalOpen(true)}>
+                <button className="emptyReferenceButton" type="button" onClick={openReferenceDrawer}>
                   <ImagePlus size={22} />
                   选择参考图片
                 </button>
@@ -821,7 +1315,6 @@ export function AiImagePanel() {
                       onClick={() => setSizeConfigId(item.sizeConfigId)}
                     >
                       <strong>{item.aspectRatio || "自定义"}</strong>
-                      <span>{item.size}</span>
                     </button>
                   ))
                 ) : (
@@ -889,7 +1382,7 @@ export function AiImagePanel() {
                       <Button className="coverMore" icon={<MoreVertical size={15} />} />
                     </div>
                     <footer>
-                      <Button icon={<Eye size={16} />} onClick={() => setPreviewImage(image)}>
+                      <Button icon={<Eye size={16} />} onClick={() => openImagePreview(image)}>
                         预览
                       </Button>
                       <Button icon={<Save size={16} />} disabled={image.saved} onClick={() => saveResult(image)}>
@@ -904,7 +1397,7 @@ export function AiImagePanel() {
               </div>
             ) : (
               <div className="aiResultEmpty">
-                <Empty description={isTaskRunning ? "AI 正在生成图片" : "选择参考图并填写提示词后开始生成"} />
+                <Empty description={isTaskRunning ? "AI 正在生成图片" : "选择参考图、标签或填写提示词后开始生成"} />
                 {isTaskRunning ? <Progress percent={progressFromStatus(currentTask?.status || 1)} showInfo={false} /> : null}
               </div>
             )}
@@ -925,8 +1418,12 @@ export function AiImagePanel() {
                   {recentTasks.map((task) => (
                     <div className="aiTaskRecord" key={task.taskId}>
                       <span>{task.taskNo}</span>
-                      <img src={task.referenceThumbnailUrl || ""} alt={task.referenceFileName || task.taskNo} />
-                      <p>{task.prompt}</p>
+                      {task.referenceThumbnailUrl ? (
+                        <img src={task.referenceThumbnailUrl} alt={task.referenceFileName || task.taskNo} />
+                      ) : (
+                        <span className="aiTaskImagePlaceholder">无图</span>
+                      )}
+                      <p className={task.prompt ? "" : "aiTaskMutedText"}>{task.prompt || "未填写提示词"}</p>
                       <span>{task.requestCount} 张</span>
                       <span className="aiTaskStatus">
                         <span>{statusLabel(task.status)}</span>
@@ -949,31 +1446,97 @@ export function AiImagePanel() {
         </div>
       </div>
 
-      <Modal
-        title="选择参考图片"
-        open={referenceModalOpen}
+      <Drawer
+        rootClassName="referencePickerDrawerRoot"
+        className="referencePickerDrawer"
+        closeIcon={null}
+        destroyOnClose={false}
         footer={null}
-        width={920}
-        onCancel={() => setReferenceModalOpen(false)}
+        open={referenceDrawerOpen}
+        placement="right"
+        size="default"
+        title={null}
+        onClose={() => setReferenceDrawerOpen(false)}
       >
-        <div className="referencePickerGrid">
-          {products.map((product) => (
-            <button
-              className={referenceProduct?.rawId === product.rawId ? "active" : ""}
-              key={product.rawId}
-              type="button"
-              onClick={() => {
-                setReferenceProduct(product);
-                setReferenceModalOpen(false);
+        <div className="referenceDrawerShell">
+          <header className="referenceDrawerHeader">
+            <h2>选择素材库参考图</h2>
+            <Button aria-label="关闭参考图选择" icon={<X size={20} />} type="text" onClick={() => setReferenceDrawerOpen(false)} />
+          </header>
+
+          <div className="referenceDrawerToolbar">
+            <Input
+              allowClear
+              prefix={<Search size={18} />}
+              placeholder="搜索文件名/标签"
+              value={referenceKeyword}
+              onChange={(event) => {
+                setReferenceKeyword(event.target.value);
+                setReferencePage(1);
               }}
-            >
-              <img src={product.thumbnailUrl || product.fileUrl} alt={product.fileName} />
-              <strong>{product.fileName}</strong>
-              <span>{formatSize(product.fileSize)}</span>
-            </button>
-          ))}
+            />
+            <div className="referenceDrawerTagFilter">
+              <TagTreePicker nodes={tags} value={referenceFilterTagIds} onChange={setReferenceFilterTagIds} />
+            </div>
+          </div>
+
+          <div className="referenceDrawerContent">
+            {pagedReferenceProducts.length ? (
+              <div className="referenceDrawerGrid">
+                {pagedReferenceProducts.map((product) => {
+                  const selected = draftReferenceRawId === product.rawId;
+                  const productTags = product.tags || product.matchedTags || [];
+                  return (
+                    <button
+                      className={selected ? "referenceDrawerCard active" : "referenceDrawerCard"}
+                      key={product.rawId}
+                      type="button"
+                      onClick={() => setDraftReferenceRawId(product.rawId)}
+                    >
+                      <div className="referenceDrawerCover">
+                        <img src={product.thumbnailUrl || product.fileUrl} alt={product.fileName} />
+                        <span className="referenceDrawerCheck">{selected ? <Check size={18} /> : null}</span>
+                      </div>
+                      <div className="referenceDrawerMeta">
+                        <Tooltip title={product.fileName}>
+                          <strong>{product.fileName}</strong>
+                        </Tooltip>
+                        <Tag color={(product.aiStatus ?? product.status) === 2 ? "orange" : "green"}>
+                          {(product.aiStatus ?? product.status) === 2 ? "识别失败" : "已入库"}
+                        </Tag>
+                      </div>
+                      <div className="referenceDrawerTags">
+                        {productTags.map((tag) => (
+                          <Tag key={tag.tagId}>{tag.tagName}</Tag>
+                        ))}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <Empty description="暂无可选参考图" />
+            )}
+          </div>
+
+          <div className="referenceDrawerPager">
+            <Pagination
+              current={referencePage}
+              pageSize={referencePageSize}
+              showSizeChanger={false}
+              total={filteredReferenceProducts.length}
+              onChange={setReferencePage}
+            />
+          </div>
+
+          <footer className="referenceDrawerFooter">
+            <Button onClick={() => setReferenceDrawerOpen(false)}>取消</Button>
+            <Button disabled={!draftReferenceProduct} type="primary" onClick={confirmReferenceProduct}>
+              确定选择
+            </Button>
+          </footer>
         </div>
-      </Modal>
+      </Drawer>
 
       <Modal title="保存为模板" open={templateModalOpen} onOk={saveTemplate} onCancel={() => setTemplateModalOpen(false)}>
         <Input value={templateName} onChange={(event) => setTemplateName(event.target.value)} placeholder="输入模板名称" />
@@ -984,9 +1547,41 @@ export function AiImagePanel() {
         open={Boolean(previewImage)}
         footer={null}
         width={900}
+        className="aiPreviewModal"
         onCancel={() => setPreviewImage(null)}
       >
-        {previewImage ? <img className="aiPreviewImage" src={imageSource(previewImage)} alt="生成图预览" /> : null}
+        {previewImage ? (
+          <div className="aiPreviewShell">
+            <div className="aiPreviewCanvas">
+              <img
+                className="aiPreviewImage"
+                src={imageSource(previewImage)}
+                alt="生成图预览"
+                style={{ width: `${previewScale * 100}%`, height: `${previewScale * 100}%` }}
+              />
+            </div>
+            <div className="aiPreviewToolbar">
+              <Tooltip title="缩小">
+                <Button
+                  aria-label="缩小生成图"
+                  icon={<ZoomOut size={15} />}
+                  onClick={() => setPreviewScale((value) => Math.max(0.5, Number((value - 0.1).toFixed(2))))}
+                />
+              </Tooltip>
+              <span>{Math.round(previewScale * 100)}%</span>
+              <Tooltip title="放大">
+                <Button
+                  aria-label="放大生成图"
+                  icon={<ZoomIn size={15} />}
+                  onClick={() => setPreviewScale((value) => Math.min(3, Number((value + 0.1).toFixed(2))))}
+                />
+              </Tooltip>
+              <Button icon={<Maximize2 size={15} />} onClick={() => setPreviewScale(1)}>
+                适应窗口
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </Modal>
     </section>
   );

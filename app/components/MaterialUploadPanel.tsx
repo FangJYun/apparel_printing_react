@@ -11,7 +11,9 @@ import {
   Folder,
   Maximize2,
   MoreVertical,
+  RefreshCw,
   Search,
+  Send,
   UploadCloud,
   ZoomIn,
   ZoomOut
@@ -23,6 +25,9 @@ type ApiResponse<T> = {
   message: string;
   data: T;
 };
+
+const TASK_STATUS_POLL_INTERVAL_MS = 2500;
+const IMAGE2_REFERENCE_STORAGE_KEY = "apparel-printing:image2-reference-product";
 
 type TreeNodeBase = {
   id: number;
@@ -45,6 +50,12 @@ type TagTreeNode = TreeNodeBase & {
 };
 
 type ImageUploadResult = {
+  rawId: number;
+  status: number;
+  message: string;
+};
+
+type ImageReRecognizeResult = {
   rawId: number;
   status: number;
   message: string;
@@ -74,6 +85,7 @@ type ProductCardResult = {
   productId: number;
   rawId: number;
   bizTypeId: number;
+  aiStatus?: number;
   hotScore: number;
   trendScore: number;
   status: number;
@@ -188,6 +200,18 @@ function taskStatusLabel(status: MaterialTask["status"]) {
   if (status === "done") return "已入库";
   if (status === "upload_failed") return "上传失败";
   return "识别失败";
+}
+
+function productAiStatusLabel(aiStatus?: number) {
+  if (aiStatus === 1) return "已入库";
+  if (aiStatus === 2) return "识别失败";
+  return "待处理";
+}
+
+function productAiStatusTagColor(aiStatus?: number) {
+  if (aiStatus === 1) return "green";
+  if (aiStatus === 2) return "orange";
+  return "blue";
 }
 
 function parseSummary(aiResultJson?: string | null) {
@@ -344,14 +368,20 @@ export function MaterialUploadPanel() {
   const [selectedProduct, setSelectedProduct] = useState<ProductCardResult | null>(null);
   const [previewScale, setPreviewScale] = useState(1);
   const [previewSize, setPreviewSize] = useState<{ width: number; height: number } | null>(null);
+  const [reRecognizingRawIds, setReRecognizingRawIds] = useState<Set<number>>(new Set());
   const [isUploading, setIsUploading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("加载素材配置中");
   const [error, setError] = useState("");
 
   const activeTasks = useMemo(
-    () => tasks.filter((task) => task.rawId && task.status === "processing").map((task) => task.rawId as number),
+    () =>
+      tasks
+        .filter((task) => task.rawId && task.status === "processing")
+        .map((task) => task.rawId as number)
+        .sort((left, right) => left - right),
     [tasks]
   );
+  const activeTaskIdsKey = activeTasks.join(",");
 
   const selectedTagIds = useMemo(() => new Set(selectedTags.map((tag) => tag.id)), [selectedTags]);
   const selectedTagKeys = selectedTags.map((tag) => String(tag.id));
@@ -370,7 +400,7 @@ export function MaterialUploadPanel() {
         title: product.fileName || `素材 #${product.rawId}`,
         subtitle: `${selectedBizTypeName}标签：`,
         imageUrl: product.thumbnailUrl || product.fileUrl,
-        status: product.status === 1 ? "已入库" : "待复核",
+        status: productAiStatusLabel(product.aiStatus),
         tags: allTags,
         matchedTagIds: new Set(matchedTags.map((tag) => tag.tagId)),
         time: formatTime(product.createdAt),
@@ -406,6 +436,73 @@ export function MaterialUploadPanel() {
     setSelectedProduct(product);
     setPreviewScale(1);
     setPreviewSize(null);
+  }
+
+  function pushProductToAiImage(product: ProductCardResult) {
+    window.localStorage.setItem(IMAGE2_REFERENCE_STORAGE_KEY, JSON.stringify(product));
+    window.location.href = withBasePath(`/admin/ai-image?referenceRawId=${encodeURIComponent(String(product.rawId))}`);
+  }
+
+  async function reRecognizeProduct(product: ProductCardResult) {
+    if (!product.rawId) {
+      message.warning("素材 rawId 为空，无法重新识别");
+      return;
+    }
+
+    setReRecognizingRawIds((current) => new Set(current).add(product.rawId));
+    try {
+      const response = await fetch(withBasePath("/api/materials/re-recognize"), {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({ rawId: product.rawId }),
+        cache: "no-store"
+      });
+      const payload = (await response.json()) as ApiResponse<ImageReRecognizeResult>;
+      if (payload.code !== 200 || !payload.data) {
+        throw new Error(payload.message || "重新识别提交失败");
+      }
+
+      setProducts((current) =>
+        current.map((item) =>
+          item.rawId === product.rawId
+            ? {
+                ...item,
+                aiStatus: 0,
+                matchedTag: undefined,
+                matchedTags: [],
+                tags: []
+              }
+            : item
+        )
+      );
+      setTasks((current) => [
+        {
+          id: `raw-${product.rawId}`,
+          fileName: product.fileName || `素材 #${product.rawId}`,
+          fileSize: product.fileSize || 0,
+          previewUrl: product.thumbnailUrl || product.fileUrl,
+          rawId: product.rawId,
+          status: "processing" as const,
+          progress: 48,
+          message: payload.data.message || "AI 重新识别处理中",
+          createdAt: new Date().toISOString()
+        },
+        ...current.filter((task) => task.rawId !== product.rawId)
+      ].slice(0, 10));
+      message.success(payload.data.message || "AI 重新识别已提交");
+      await refreshRawResults([product.rawId]);
+      await refreshRecentTasks();
+    } catch (recognizeError) {
+      message.error(recognizeError instanceof Error ? recognizeError.message : "重新识别提交失败");
+    } finally {
+      setReRecognizingRawIds((current) => {
+        const next = new Set(current);
+        next.delete(product.rawId);
+        return next;
+      });
+    }
   }
 
   async function copySelectedProductUrl() {
@@ -490,7 +587,7 @@ export function MaterialUploadPanel() {
     async function loadTags() {
       setLoadingMessage("加载标签树中");
       setTags([]);
-      setSelectedTags([]);
+      setSelectedTags((current) => (current.length ? [] : current));
       try {
         const response = await fetch(withBasePath(`/api/materials/tags?bizTypeId=${selectedBizTypeId}`), {
           cache: "no-store"
@@ -615,12 +712,12 @@ export function MaterialUploadPanel() {
   }, [refreshProducts, refreshRecentTasks]);
 
   useEffect(() => {
-    if (activeTasks.length === 0) return;
+    if (!activeTaskIdsKey) return;
     let disposed = false;
 
     async function tick() {
       try {
-        const response = await fetch(withBasePath(`/api/materials/list?rawIds=${activeTasks.join(",")}`), {
+        const response = await fetch(withBasePath(`/api/materials/list?rawIds=${activeTaskIdsKey}`), {
           cache: "no-store"
         });
         const payload = (await response.json()) as ApiResponse<ImageRawResult[]>;
@@ -632,14 +729,14 @@ export function MaterialUploadPanel() {
       }
     }
 
-    const timer = window.setInterval(tick, 2500);
+    const timer = window.setInterval(tick, TASK_STATUS_POLL_INTERVAL_MS);
     void tick();
 
     return () => {
       disposed = true;
       window.clearInterval(timer);
     };
-  }, [activeTasks, mergeRawResults]);
+  }, [activeTaskIdsKey, mergeRawResults]);
 
   async function handleFiles(files: File[]) {
     setError("");
@@ -891,7 +988,7 @@ export function MaterialUploadPanel() {
                   >
                     <div className="libraryItemTitle">
                       <strong>{card.title}</strong>
-                      <Tag color={card.status === "已入库" ? "green" : card.status === "识别失败" ? "orange" : "blue"}>{card.status}</Tag>
+                      <Tag color={productAiStatusTagColor(card.product.aiStatus)}>{card.status}</Tag>
                     </div>
                     <p>{card.subtitle}</p>
                     <Space className="libraryTagList" size={[4, 4]} wrap>
@@ -906,6 +1003,31 @@ export function MaterialUploadPanel() {
                       )}
                     </Space>
                     <footer>
+                      <Space className="libraryCardActions" size={4}>
+                        <Tooltip title="重新识别标签">
+                          <Button
+                            aria-label="重新识别标签"
+                            icon={<RefreshCw size={14} />}
+                            loading={reRecognizingRawIds.has(card.product.rawId)}
+                            size="small"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void reRecognizeProduct(card.product);
+                            }}
+                          />
+                        </Tooltip>
+                        <Tooltip title="推送到 AI 生图参考图">
+                          <Button
+                            aria-label="推送到 AI 生图参考图"
+                            icon={<Send size={14} />}
+                            size="small"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              pushProductToAiImage(card.product);
+                            }}
+                          />
+                        </Tooltip>
+                      </Space>
                       <time>{card.time}</time>
                     </footer>
                   </Card>
@@ -933,9 +1055,7 @@ export function MaterialUploadPanel() {
         extra={
           selectedProduct ? (
             <Space className="detailHeaderActions" size={8}>
-              <Tag color={selectedProduct.status === 1 ? "green" : "blue"}>
-                {selectedProduct.status === 1 ? "已入库" : "待复核"}
-              </Tag>
+              <Tag color={productAiStatusTagColor(selectedProduct.aiStatus)}>{productAiStatusLabel(selectedProduct.aiStatus)}</Tag>
               <Tooltip title="下载原图">
                 <Button
                   type="primary"
