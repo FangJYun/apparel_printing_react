@@ -3052,6 +3052,18 @@ main {
   padding: 0;
 }
 
+.manualCopyDialog {
+  display: grid;
+  gap: 10px;
+}
+
+.manualCopyDialog p {
+  margin: 0;
+  color: #667085;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .detailDrawerTitle {
   display: grid;
   gap: 6px;

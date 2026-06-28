@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DataNode } from "antd/es/tree";
 import type { RcFile } from "antd/es/upload";
-import { Alert, Badge, Button, Card, Checkbox, Drawer, Empty, Input, Progress, Space, Tag, Tooltip, Tree, Upload, message } from "antd";
+import { Alert, Badge, Button, Card, Checkbox, Drawer, Empty, Input, Modal, Progress, Space, Tag, Tooltip, Tree, Upload, message } from "antd";
 import {
   Copy,
   Database,
@@ -28,6 +28,31 @@ type ApiResponse<T> = {
 
 const TASK_STATUS_POLL_INTERVAL_MS = 2500;
 const IMAGE2_REFERENCE_STORAGE_KEY = "apparel-printing:image2-reference-product";
+
+async function copyTextToClipboard(text: string) {
+  if (navigator.clipboard?.writeText && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return true;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "fixed";
+  textarea.style.top = "-9999px";
+  textarea.style.left = "-9999px";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  textarea.setSelectionRange(0, text.length);
+
+  try {
+    return document.execCommand("copy");
+  } finally {
+    textarea.remove();
+  }
+}
 
 type TreeNodeBase = {
   id: number;
@@ -510,8 +535,34 @@ export function MaterialUploadPanel() {
       message.warning("暂无可复制的图片地址");
       return;
     }
-    await navigator.clipboard?.writeText(selectedProduct.fileUrl);
-    message.success("图片地址已复制");
+
+    try {
+      const copied = await copyTextToClipboard(selectedProduct.fileUrl);
+      if (copied) {
+        message.success("图片地址已复制");
+        return;
+      }
+    } catch {
+      // Fall through to the manual copy dialog for non-secure HTTP pages.
+    }
+
+    Modal.info({
+      title: "手动复制图片地址",
+      width: 560,
+      okText: "知道了",
+      content: (
+        <div className="manualCopyDialog">
+          <p>当前浏览器环境不允许自动复制，请手动复制下面的图片地址。</p>
+          <Input.TextArea
+            autoSize={{ minRows: 3, maxRows: 6 }}
+            readOnly
+            value={selectedProduct.fileUrl}
+            onFocus={(event) => event.currentTarget.select()}
+            onClick={(event) => event.currentTarget.select()}
+          />
+        </div>
+      )
+    });
   }
 
   async function downloadSelectedProductOriginal() {
