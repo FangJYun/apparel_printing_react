@@ -92,6 +92,7 @@ type ProductCardResult = {
   createdAt: string;
   fileName: string;
   fileSize?: number;
+  source?: string;
   fileObjectKey?: string;
   thumbnailObjectKey?: string;
   fileUrl: string;
@@ -175,6 +176,16 @@ function normalizeStatus(status: number): MaterialTask["status"] {
 function fileExtFromName(fileName?: string) {
   if (!fileName || !fileName.includes(".")) return "--";
   return fileName.split(".").pop()?.toUpperCase() || "--";
+}
+
+function materialSourceLabel(source?: string) {
+  const normalized = source?.trim();
+  if (!normalized) return "--";
+  if (normalized === "upload") return "上传";
+  if (normalized === "crawl") return "爬取";
+  if (normalized === "cloth_image") return "服装图提取";
+  if (normalized === "ai_generate") return "AI 生图";
+  return normalized;
 }
 
 function confidencePercent(confidence: number | null) {
@@ -1127,7 +1138,7 @@ export function MaterialUploadPanel() {
                 </div>
                 <div>
                   <span>来源</span>
-                  <strong>上传</strong>
+                  <strong>{materialSourceLabel(selectedProduct.source)}</strong>
                 </div>
                 <div>
                   <span>格式</span>
